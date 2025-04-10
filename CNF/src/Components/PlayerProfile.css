@@ -1,0 +1,158 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Oswald:wght@200..700&family=Russo+One&display=swap');
+
+.bebas-neue-regular {
+  font-family: "Bebas Neue", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+.anton-regular {
+  font-family: "Anton", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.russo-one-regular {
+  font-family: "Russo One", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+
+
+
+/* Profile Container */
+.profile-container {
+  font-family: 'Bebas Neue', sans-serif;
+  letter-spacing: 5px;
+  background-color: #121212;
+  color: white;
+  min-height: 100vh;
+  text-align: center;
+  padding: 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Profile Header and Stats Side by Side */
+.profile-header-stats {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  background-color: #1e1e1e;
+  padding: 20px;
+  border-radius: 15px;
+}
+
+/* Profile Header */
+.profile-header {
+  display: flex;
+  align-items: center;
+  background-color: #222;
+  padding: 20px;
+  border-radius: 15px;
+  flex: 1;
+}
+
+.profile-image img {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  border: 3px solid #444;
+}
+
+.profile-info {
+  margin-left: 15px;
+}
+
+.profile-info h2 {
+  margin: 0;
+  font-size: 35px;
+  color: #f0f0f0;
+}
+
+.profile-info p {
+  margin: 5px 0;
+  color: #b0b0b0;
+}
+
+/* Stats Section */
+.stats-container {
+  display: flex;
+  justify-content: space-around;
+  background-color: #222;
+  padding: 15px;
+  border-radius: 15px;
+  flex: 1;
+}
+
+.stat-box {
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: bold;
+  color: #00ff99;
+}
+
+.stat-label {
+  font-size: 14px;
+  color: #cccccc;
+}
+
+/* Tabs */
+.tabs-container {
+  display: flex;
+  background-color: #1e1e1e;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.tab-button {
+  font-family: 'Bebas Neue', sans-serif;
+  letter-spacing: 5px;
+  flex: 1;
+  padding: 12px;
+  font-size: 16px;
+  color: #e0e0e0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.tab-button:hover {
+  background-color: #333;
+}
+
+.tab-button.active {
+  color: #00ff99;
+  border-bottom: 3px solid #00ff99;
+}
+
+/* Tab Content */
+.tab-content {
+  background: #222;
+  color: white;
+  padding: 20px;
+  min-height: 350px;
+  border-radius: 10px;
+  text-align: left;
+}
+
+.tab-content ul {
+  list-style: none;
+  padding: 0;
+}
+
+.tab-content li {
+  padding: 10px;
+  border-bottom: 1px solid #444;
+}
+
+.dark-text {
+  color: #cccccc;
+}
