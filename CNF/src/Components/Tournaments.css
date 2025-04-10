@@ -1,0 +1,343 @@
+/* --- Global Resets & Fonts --- */
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Oswald:wght@200..700&family=Russo+One&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Audiowide&family=Goldman:wght@400;700&family=Racing+Sans+One&family=Tourney:ital,wght@0,100..900;1,100..900&family=Zen+Dots&display=swap');
+
+/* Optional: mild reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* --- Page Container --- */
+.tournaments-container {
+  display: flex;
+  background-color: #121212;
+  color: #ffffff;
+  min-height: 100vh;
+  padding: 20px;
+  padding-top: 150px; /* For top spacing */
+}
+
+/* --- Left-side Filters --- */
+.filter-tournaments {
+  width: 270px;
+  background: linear-gradient(135deg, #1e1e1e, #292929);
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 10px rgba(255, 166, 0, 0.2);
+  transition: 0.3s ease-in-out;
+}
+
+.filter-tournaments:hover {
+  box-shadow: 0 6px 15px rgba(255, 166, 0, 0.4);
+}
+
+/* Filter Section Headings */
+.filters-heading {
+  font-size: 1.4rem;
+  text-align: center;
+  margin-bottom: 15px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: white;
+  font-weight: bold;
+}
+
+.filter-section {
+  margin-bottom: 25px;
+}
+
+.filter-subHeading {
+  font-size: 16px;
+  margin-bottom: 12px;
+  color: #ffffff;
+  text-align: left;
+  font-weight: bold;
+}
+
+/* Modernized filter options */
+.filter-section label {
+  display: flex;
+  align-items: center;
+  padding: 5px;
+  border-radius: 0px;
+  transition: 0.3s;
+  background: #292929;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.filter-section label:hover {
+  background: #3a3a3a;
+}
+
+/* Custom Radio Button */
+.filter-section input[type="radio"] {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid #f39c12;
+  margin-right: 10px;
+  transition: 0.2s ease-in-out;
+}
+
+.filter-section input[type="radio"]:checked {
+  background-color: #f39c12;
+  border-color: #ffffff;
+}
+
+/* Reset Filters Button */
+.reset-filters {
+  background: white;
+  color: black;
+  border: none;
+  padding: 10px;
+  width: 100%;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: 0.3s;
+  margin-top: 10px;
+  font-weight: bold;
+}
+
+.reset-filters:hover {
+  background: orange;
+  color: #121212;
+}
+
+
+
+/* --- Right-side Tournaments List --- */
+.tournaments-list {
+  flex: 1;
+  padding-left: 20px;
+}
+
+.page-title {
+  font-size: 1.5rem;
+  margin-bottom: 20px;
+}
+
+.highlight {
+  color: #f39c12;
+}
+
+.tournaments-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 20px;
+  justify-content: center;
+}
+
+.tournament-card {
+  display: flex;
+  align-items: center;
+  background-color: #1e1e1e;
+  border-radius: 10px;
+  padding: 15px;
+  cursor: pointer;
+  transition: 0.3s;
+  box-shadow: 0px 0px 10px rgba(255, 166, 0, 0.445);
+}
+
+.tournament-card:hover {
+  background-color: #292929;
+  transform: scale(1.055);
+}
+
+.tournament-logo {
+  background-color: rgba(255, 217, 0, 0.646);
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  margin-right: 15px;
+}
+
+.tournament-info {
+  flex: 1;
+}
+
+.status-badge {
+  background-color: red;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 5px 10px;
+  border-radius: 10px;
+  display: inline-block;
+  margin-bottom: 5px;
+}
+
+.tournament-name-heading {
+  font-size: 1.15rem;
+  margin-bottom: 5px;
+}
+
+.tournament-date,
+.tournament-location {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.no-results {
+  text-align: center;
+  font-size: 18px;
+  margin-top: 20px;
+}
+/* Popup Overlay */
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(5px);
+}
+
+/* Popup Box */
+.popup {
+  background: rgba(30, 30, 30, 0.9);
+  border-radius: 12px;
+  padding: 25px;
+  width: 90%;
+  max-width: 400px;
+  max-height: 80vh; /* Ensuring it never exceeds viewport height */
+  overflow-y: auto; /* Allows scrolling inside the popup */
+  text-align: center;
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+  animation: fadeIn 0.3s ease-in-out;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Popup Heading */
+.popup h3 {
+  color: white;
+  font-size: 20px;
+  margin-bottom: 15px;
+}
+
+/* Search Input */
+.search-input {
+  width: 90%;
+  padding: 10px;
+  margin-bottom: 15px;
+  border-radius: 6px;
+  border: 1px solid gray;
+  background: #2a2a2a;
+  color: white;
+  font-size: 16px;
+  outline: none;
+  transition: 0.3s;
+}
+
+.search-bar {
+  width: 90%;
+  padding: 12px;
+  border: 1px solid #555;
+  border-radius: 8px;
+  background-color: #222;
+  color: white;
+  font-size: 16px;
+  outline: none;
+  transition: all 0.3s ease-in-out;
+}
+
+.search-bar::placeholder {
+  color: #aaa;
+}
+
+.search-bar:focus {
+  border-color: #f44336;
+  background-color: #333;
+}
+
+.search-input:focus {
+  border-color: #f44336;
+}
+
+/* Location List */
+.location-list {
+  max-height: 50vh; /* Ensures list doesn't go outside viewport */
+  overflow-y: auto;
+  width: 100%;
+  text-align: left;
+  padding: 10px;
+}
+
+/* Location Option */
+.location-option {
+  padding: 8px;
+  cursor: pointer;
+  transition: 0.2s;
+  color: white;
+  border-bottom: 1px solid gray;
+}
+
+.location-option:hover {
+  background: #f44336;
+}
+
+/* Buttons */
+.popup-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+  width: 100%;
+}
+
+.popup button {
+  flex: 1;
+  margin: 0 5px;
+  padding: 10px 15px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: 0.3s;
+  border: none;
+}
+
+.popup .cancel-btn {
+  background: #444;
+  color: white;
+}
+
+.popup .cancel-btn:hover {
+  background: #666;
+}
+
+.popup .confirm-btn {
+  background: #f44336;
+  color: white;
+}
+
+.popup .confirm-btn:hover {
+  background: #d32f2f;
+}
+.clickable-location {
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+
+/* Responsive */
+@media (max-width: 768px) {
+  .popup {
+      width: 95%;
+      max-height: 85vh;
+  }
+
+  .location-list {
+      max-height: 60vh;
+  }
+}

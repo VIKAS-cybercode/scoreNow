@@ -1,0 +1,227 @@
+* {
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Arial', sans-serif;
+  }
+  
+  /* App Container Styles */
+  .app-container {
+    background-color: #1a1a1a;
+    color: #fff;
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+  }
+  
+  /* Header Styles */
+  .header {
+    background: linear-gradient(90deg, #000, #333);
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 10px rgba(255, 255, 255, 0.1);
+    position: relative;
+    z-index: 1;
+  }
+  
+  .header h1 {
+    font-size: 28px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+  
+  .nav {
+    display: flex;
+    gap: 20px;
+  }
+  
+  .nav-link {
+    color: #fff;
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 500;
+    padding: 8px 15px;
+    border: 1px solid #fff;
+    border-radius: 20px;
+    transition: all 0.3s ease;
+  }
+  
+  .nav-link:hover {
+    background-color: #fff;
+    color: #000;
+  }
+  
+  /* Main Content Styles */
+  .main-content {
+    padding: 40px 20px;
+    text-align: center;
+  }
+  
+  .main-content h2 {
+    font-size: 32px;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    background: linear-gradient(90deg, #fff, #ccc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  
+  /* Team Form Page Styles */
+  .team-form-page {
+    background: #1a1a1a;
+    min-height: calc(100vh - 140px); /* Adjust for header and footer */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px 20px;
+  }
+  
+  .team-form-container {
+    margin-top:5%;
+    background: #2a2a2a;
+    padding: 40px;
+    border-radius: 15px;
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.1);
+    max-width: 500px;
+    width: 100%;
+    text-align: center;
+  }
+  
+  .team-form-container h2 {
+    font-size: 32px;
+    margin-bottom: 30px;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    background: linear-gradient(90deg, #fff, #ccc);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    position: relative;
+  }
+  
+  .team-form-container h2::after {
+    content: '';
+    width: 50px;
+    height: 3px;
+    background: #fff;
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+  }
+  
+  .team-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+  
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+  }
+  
+  .form-group label {
+    font-size: 16px;
+    margin-bottom: 8px;
+    opacity: 0.8;
+  }
+  
+  .form-group input {
+    padding: 12px;
+    font-size: 16px;
+    border: 1px solid #fff;
+    border-radius: 5px;
+    background: #1a1a1a;
+    color: #fff;
+    transition: all 0.3s ease;
+  }
+  
+  .form-group input:focus {
+    outline: none;
+    border-color: #ccc;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+  }
+  
+  .input-error {
+    border-color: #ff5555 !important;
+  }
+  
+  .error {
+    color: #ff5555;
+    font-size: 14px;
+    margin-top: 5px;
+  }
+  
+  .submit-btn {
+    padding: 12px 20px;
+    font-size: 16px;
+    background: #fff;
+    color: #000;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .submit-btn:hover {
+    background: #ccc;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 255, 255, 0.3);
+  }
+  
+  .submit-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: 0.5s;
+  }
+  
+  .submit-btn:hover::before {
+    left: 100%;
+  }
+  
+  .success-message {
+    color: #55ff55;
+    font-size: 16px;
+    margin-bottom: 20px;
+  }
+  
+  .logo-preview {
+    margin-top: 20px;
+    text-align: center;
+  }
+  
+  .logo-preview h3 {
+    font-size: 18px;
+    margin-bottom: 10px;
+    opacity: 0.8;
+  }
+  
+  .logo-preview img {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #fff;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+  }
+  
+  /* Footer Styles */
+  .footer {
+    background: #000;
+    color: #fff;
+    text-align: center;
+    padding: 20px;
+    font-size: 14px;
+    opacity: 0.8;
+  }
