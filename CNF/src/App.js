@@ -16,10 +16,10 @@ import StartMatch from "./Components/StartMatch";
 import CreateMatch from "./Components/CreateMatch";
 import Scoring from "./Components/Scoring";
 import Looking from "./Components/Looking";
-// import Toss from "./Components/Toss";
 import { PlayerProvider, usePlayer } from "./PlayerContext";
 import CreateTeam from "./Components/CreateTeam";
 import Teams from "./Components/Teams";
+import TeamDetails from "./Components/TeamDetails";
 const AppContent = () => {
   const { playerId, loadingPlayer, authLoading } = usePlayer();
   console.log(playerId);
@@ -35,11 +35,10 @@ const AppContent = () => {
           <Route path="/matches" element={<LiveMatches />} />
           <Route path="/looking" element={<Looking />} />
            
-          <Route path="/teams/:teamId" />
+          <Route path="/teams/:teamId" element={<TeamDetails />}/>
           <Route path="/matches/:matchId" element={<Match />} />
           <Route path="/matches/:matchId/start" element={<StartMatch />} />
           <Route path="/matches/:matchId/score" element={<Scoring />} />
-          {/* <Route path="/matches/:matchId/toss" element={<Toss />} /> */}
           <Route path="/tournaments/:tournamentId" element={<TournamentDetails />} />
 
           {/* Redirect: If player not created, show form */}
