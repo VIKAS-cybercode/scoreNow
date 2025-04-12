@@ -50,6 +50,7 @@ a:hover{
   font-size: 45px;
   font-weight: bold;
   color: white;
+  cursor:pointer;
 }
 
 /* Navbar */
@@ -79,7 +80,7 @@ a:hover{
   /* background: rgba(255, 255, 255, 0.2); */
   /* background: pink; */
   color: orange;
-  transform: scale(1.125);
+  /* transform: scale(1.125); */
 }
 .more-dropdown{
   font-family: 'Bebas Neue', sans-serif;
@@ -129,11 +130,11 @@ a:hover{
   transition: background 0.3s;
 }
 
-.dropdown li:hover {
+/* .dropdown li:hover {
   background: black;
   color: white;
   transform: scale();
-}
+} */
 
 /* Search Icon */
 .search-icon {
@@ -397,7 +398,7 @@ a:hover{
   margin-left: 0.2rem;
 }
 
-.user-icon {
+/* .user-icon {
   cursor: pointer;
   font-size: 1.6rem;
   padding: 0.4rem;
@@ -408,9 +409,11 @@ a:hover{
 
 .user-icon:hover {
   background: #ddd;
-}
+} */
 
 .user-menu {
+  display: flex;
+  flex-direction: column;
   position: absolute;
   right: 0;
   background: white;
@@ -420,7 +423,7 @@ a:hover{
   list-style: none;
   padding: 0.3rem 0;
   z-index: 100;
-  width: 160px;
+  width: 245px;
   font-size: 14px; /* Smaller font */
 }
 
@@ -432,14 +435,13 @@ a:hover{
 }
 
 .user-menu li:hover {
-  background-color: #f2f2f2;
-  font-size:20px;
+  background-color: orange;
+  /* font-size:20px; */
 }
 
 .user-menu a {
   text-decoration: none;
   color: black;
-  display: block;
-  font-size: 14px; /* Match font size */
+  /* display: block; */
+  /* font-size: 14px; Match font size */
 }
-
