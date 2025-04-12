@@ -10,9 +10,10 @@ const Scoring = () => {
    const stumpOutWide=useRef(0);
    const preRunoutStrikerRef = useRef(null);
    const preRunoutNonStrikerRef = useRef(null);
-
+  
   const matchId = 123;
   const [inningNumber,setInningNumber]=useState(0);
+  const [targetScore, setTargetScore] = useState(null);
   useEffect(() => {
     if (matchId) {
       socket.emit("join-room", matchId);
@@ -85,7 +86,7 @@ const Scoring = () => {
   const [currentOverEvents, setCurrentOverEvents] = useState([]); // CurrentOverEvents
   const [ballEvent, setBallEvent] = useState(null);
   const [initialPlayersSent, setInitialPlayersSent] = useState(false);
-
+  
   useEffect(() => {
     if (
       batsmen.length === 2 &&
@@ -124,15 +125,15 @@ const Scoring = () => {
     }
   }, [batsmen, currentBowler, showInitialBatsmenModal, showInitialBowlerModal, initialPlayersSent]);
   
-  useEffect(() => {
-    if (ballEvent) {
-      socket.emit("ballEvent", ballEvent);
-      console.log("Emitted ball event:", ballEvent);
-      setBallEvent(null); // reset for next ball
-    }
-  }, [ballEvent]);
-  useEffect(() => {
-    if (gameOver) {
+ // Replace your current gameOver useEffect with this:
+useEffect(() => {
+  if (gameOver) {
+    if (inningNumber === 0) {
+      // First innings ended: set target score (runs + 1) for the second innings.
+      setTargetScore(runs + 1);
+      // Optionally, you can delay resetting states until user action.
+    } else {
+      // Second innings: emit match over event
       const payload = {
         matchId,
         inningNumber,
@@ -156,11 +157,12 @@ const Scoring = () => {
         gameOver: true,
         Allout: allOut
       };
-  
       socket.emit("gameOverEvent", payload);
       console.log("Game Over Event Sent:", payload);
     }
-  }, [gameOver]);
+  }
+}, [gameOver]);
+
   
   // ----- Helper Functions -----
   const isGameOver = (legalDeliveries) =>
@@ -195,6 +197,10 @@ const Scoring = () => {
   // ----- Ball Handling -----
 
   const handleRun = (run,bt=null) => {
+    // Inside handleRun(), after updating runs, add:
+if (inningNumber === 1 && (runs + run) >= targetScore) {
+  setGameOver(true);
+}
     if (gameOver || allOut) return;
   
     const newTotalDeliveries = totalDeliveries + 1;
@@ -663,6 +669,27 @@ const Scoring = () => {
     }
     setExtraType(null);
   };
+// Add this function within your Scoring component
+const startSecondInnings = () => {
+  setInningNumber(1);
+  setRuns(0);
+  setWickets(0);
+  setTotalDeliveries(0);
+  setCurrentOverDeliveries(0);
+  setGameOver(false);
+  setAllOut(false);
+  setBatsmen([]); // Reset batsmen for new selection.
+  setOutBatsmen([]);
+  setPendingBowlerChange(false);
+  setInitialPlayersSent(false);
+  // Reset the previously selected opening batsmen for the new inning
+  setSelectedInitialBatsmen([]);
+  // Re-open the initial batsmen modal for the second innings.
+  setShowInitialBatsmenModal(true);
+  console.log("Starting Second Innings. Target is", targetScore);
+};
+
+
 
   // ----- Batsman & Bowler Selection -----
 
@@ -670,14 +697,15 @@ const Scoring = () => {
     setBatsmen((prev) => {
       const outBatsman = outBatsmanRef.current;
       const nonStriker = previousNonStrikerRef.current;
-      
-   const  newBatsmen = [selectedBatsman, nonStriker]; // striker first
-      
+      // Prepare new batsmen pair (new batsman as striker)
+      const newBatsmen = [selectedBatsman, nonStriker]; 
+  
       if (dismissalWasRunOut) {
         setShowBatsmanModal(false);
         setShowStrikerModal(true);
         setDismissalWasRunOut(false);
       } else {
+        // Close the batsman modal immediately
         setShowBatsmanModal(false);
         const isStumpWide = stumpOutWide.current === 1;
         const payload = {
@@ -696,21 +724,29 @@ const Scoring = () => {
           extraRun: isStumpWide ? 1 : 0,
           extratype: isStumpWide ? "WD" : (extraType === "Run Out" ? null : extraType),
           currentStrikerid: selectedBatsman,
-          currentnonstrikerid:nonStriker,
+          currentnonstrikerid: nonStriker,
           totalRuns: runs,
           Totaloverslimit: totalOversLimit,
           noBalltype: null,
           gameOver,
-          Allout: allOut
+          Allout: allOut,
         };
-    
+  
         socket.emit("wicketEvent", payload);
         console.log("Wicket Event Sent:other than Run out", payload);
         stumpOutWide.current = 0;
       }
+  
+      // **NEW ADDITION:**
+      // If we are in the second innings, automatically open the bowler modal
+      if (inningNumber === 1) {
+        setShowInitialBowlerModal(true);
+      }
+      
       return newBatsmen;
     });
   };
+  
 
   const handleStrikerSelection = (selectedBatsman) => {
     setBatsmen((prev) => {
@@ -843,15 +879,45 @@ const Scoring = () => {
 
   return (
     <div className="app">
-      <div className="scoing-main-div">
+      <div className="scoring-main-div">
         <Header />
         <ScoreDisplay
           runs={runs}
           wickets={wickets}
           overs={totalOversDisplay}
           totalOvers={totalOversLimit}
-          tossInfo="Team A won the toss and elected to bat"
+          tossInfo={
+            inningNumber === 0
+              ? "Team A won the toss and elected to bat"
+              : `Chasing Target: ${targetScore} runs`
+          }
         />
+        {/* After your ScoreDisplay component */}
+{inningNumber === 0 && gameOver && (
+  <div className="game-over">
+    First Innings Over! <br />
+    Final Score: {runs}/{wickets}
+    <br />
+    <button onClick={startSecondInnings}>
+      Start Second Innings
+    </button>
+  </div>
+)}
+{inningNumber === 1 && targetScore && !gameOver && (
+  <div className="target-info">
+    <p>
+      Need {targetScore - runs} runs in {totalOversLimit * 6 - totalDeliveries} balls
+    </p>
+  </div>
+)}
+{inningNumber === 1 && gameOver && (
+  <div className="game-over">
+    Second Innings Over! <br />
+    {runs >= targetScore
+      ? "Chasing team wins!"
+      : "Chasing team loses!"}
+  </div>
+)}
 
         {gameOver && !allOut && (
           <div className="game-over">Game Over: Maximum overs reached!</div>
@@ -865,11 +931,11 @@ const Scoring = () => {
         {/* Display current over's ball-by-ball events */}
         <CurrentOverEvents events={currentOverEvents} />
 
-        <div className="player-info">
-          <PlayerInfo type="batsman" players={batsmen} />
+        <div className="scoring-player-info">
+          <PlayerInfo type="batsman" players={batsmen} teamName="Team A"/>
           <PlayerInfo
             type="bowler"
-            player={{ ...currentBowlerData, overs: bowlerOvers, maidens: 0 }}
+            player={{ ...currentBowlerData, overs: bowlerOvers, maidens: 0 }} teamName="Team B"
           />
         </div>
 
@@ -1078,8 +1144,8 @@ const Scoring = () => {
 /* ----------------- Helper Components ----------------- */
 
 const Header = () => (
-  <div className="header">
-    <h1>Cricket Scoring</h1>
+  <div className="scoring-header">
+    <h1>Start Scoring</h1>
   </div>
 );
 
@@ -1105,36 +1171,38 @@ const CurrentOverEvents = ({ events }) => {
   );
 };
 
-const PlayerInfo = ({ type, players, player }) => {
+const PlayerInfo = ({ type, players, player, teamName }) => {
   if (type === "batsman") {
     return (
-      <div className="batsmen-info">
-        <h3>Batsmen</h3>
-        {players.map((batsman, index) => (
+      <div className="scoring-batsmen-info">
+        <h3>{teamName}</h3>
+        {players.map((batsman, index) =>
           batsman ? (
             <p key={index}>
+              <span className="bat-icon" aria-hidden="true" />
               {batsman.name}: {batsman.runs} ({batsman.balls})
               {index === 0 ? " *" : ""}
             </p>
           ) : (
             <p key={index}>Waiting for new batsman...</p>
           )
-        ))}
+        )}
       </div>
     );
   } else if (type === "bowler") {
     return (
-      <div className="bowler-info">
-        <h3>Bowler</h3>
+      <div className="scoring-bowler-info">
+        <h3>{teamName}</h3>
         <p>
-          {player.name}: {player.overs}-{player.maidens}-{player.runs}-
-          {player.wickets}
+          <span className="ball-icon" aria-hidden="true" />
+          {player.name}: {player.overs}-{player.maidens}-{player.runs}-{player.wickets}
         </p>
       </div>
     );
   }
   return null;
 };
+
 
 const ScoringButtons = ({ onScore, lastScored, disabled }) => {
   const [customRun, setCustomRun] = useState("");
