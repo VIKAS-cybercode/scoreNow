@@ -5,15 +5,15 @@ const createTournamentsTable = async () => {
     const query = `
         CREATE TABLE IF NOT EXISTS "tournaments" (
             "tournamentId" SERIAL PRIMARY KEY,
-            "profilPicture" VARCHAR(255) ,
+            "profilePicture" VARCHAR(255) ,
             "name" VARCHAR(100) NOT NULL,
             "city" VARCHAR(100),
             "ground" VARCHAR(100),
             "organiserId" INT REFERENCES "players"("playerId") ON DELETE CASCADE,
-            "organizerPhoneNumber" VARCHAR(15) CHECK ("organizerPhoneNumber" ~ '^[0-9]+$'),
+            "organiserPhoneNumber" VARCHAR(15) CHECK ("organiserPhoneNumber" ~ '^[0-9]+$'),
             "startDate" TIMESTAMP NOT NULL,
             "endDate" TIMESTAMP NOT NULL,
-            "tournamentCategory" VARCHAR(50) CHECK ("tournamentCategory" IN ('Local', 'State', 'National', 'International')),
+            "tournamentCategory" VARCHAR(50) CHECK ("tournamentCategory" IN ('Open', 'Corporate', 'Community', 'School', 'Series')),
             "matchType" VARCHAR(50) CHECK ("matchType" IN ('T20', 'ODI', 'Test')),
             "ballType" VARCHAR(50) CHECK ("ballType" IN ('Leather', 'Tennis', 'Rubber')),
             "totalMatches" INT DEFAULT 0,
