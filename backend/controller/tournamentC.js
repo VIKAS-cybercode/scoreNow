@@ -2,13 +2,13 @@ import pool from '../models/db.js';
 
 const insertTournament = async (req, res) => {
     const {
-        image, name, city, ground, organizerId, organizerPhoneNumber,
+        profilePicture, name, city, ground, organiserId, organiserPhoneNumber,
         startDate, endDate, tournamentCategory, matchType, ballType
     } = req.body;
 
     const query = `
         INSERT INTO "tournaments" (
-            "image", "name", "city", "ground", "organizerId", "organizerPhoneNumber", 
+            "profilePicture", "name", "city", "ground", "organiserId", "organiserPhoneNumber", 
             "startDate", "endDate", "tournamentCategory", "matchType", "ballType"
         ) VALUES (
             $1, $2, $3, $4, $5, $6, 
@@ -17,7 +17,7 @@ const insertTournament = async (req, res) => {
     `;
 
     const values = [
-        image, name, city, ground, organizerId, organizerPhoneNumber,
+        profilePicture, name, city, ground, organiserId, organiserPhoneNumber,
         startDate, endDate, tournamentCategory, matchType, ballType
     ];
 
