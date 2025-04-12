@@ -38,7 +38,7 @@ export default function CreateMatch() {
         .catch(() => setTeams([]));
     } else {
       console.log("t");
-      fetch("http://localhost:5000/api/teams/all")
+      fetch("http://localhost:5000/api/teams")
         .then((res) => res.json())
         .then((data) => setTeams(data))
         .catch(() => setTeams([]));
