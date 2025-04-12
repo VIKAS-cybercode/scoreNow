@@ -2,8 +2,22 @@ import pool from "../models/db.js";
 
 // Insert a new match
 const insertMatch = async (req, res) => {
-    const { tournamentId, team1Id, team2Id, matchType, oversPerSide, oversPerBowler, city, ground,
-        startDate, ballType, status, organiserId, scorerId } = req.body;
+    console.log("insertmatch");
+
+    // Extracting values from request body
+    let {
+        tournamentId, team1Id, team2Id, matchType, oversPerSide, oversPerBowler, city, ground,
+        startDate, ballType, status, organiserId, scorerId
+    } = req.body;
+
+    // ✅ Convert necessary fields to integers
+    tournamentId = Number(tournamentId) || null;
+    team1Id = Number(team1Id) || null;
+    team2Id = Number(team2Id) || null;
+    oversPerSide = Number(oversPerSide) || null;
+    oversPerBowler = Number(oversPerBowler) || null;
+    organiserId = Number(organiserId) || null;
+    scorerId = Number(scorerId) || null;
 
     const query = `
         INSERT INTO "matches" (
@@ -17,13 +31,13 @@ const insertMatch = async (req, res) => {
     const values = [
         tournamentId, team1Id, team2Id, matchType,
         oversPerSide, oversPerBowler, city, ground,
-        startDate, ballType, status, officialId, scorerId
+        startDate, ballType, status, organiserId, scorerId
     ];
 
     try {
         const result = await pool.query(query, values);
         console.log("Match inserted, ID:", result.rows[0].matchId);
-        
+
         // Sending matchId
         res.status(201).json(result.rows[0].matchId);
 
@@ -33,38 +47,134 @@ const insertMatch = async (req, res) => {
     }
 };
 
+
 const getAllMatches = async (req, res) => {
     try {
         console.log("allmatch")
-        const { location, status } = req.query;
-        let query = "SELECT * FROM \"matches\" WHERE 1=1";
-        let values = [];
-
+        const { location, status} = req.query;
+        
+        let query = `
+        SELECT 
+        m.*,
+        t1.name AS "team1Name",
+        t2.name AS "team2Name",
+        o.name AS "organizerName",
+        s.name AS "scorerName",
+        t.name AS "tournamentName",
+        COUNT(*) OVER() AS "totalCount"
+        FROM matches m
+        LEFT JOIN teams t1 ON m."team1Id" = t1."teamId"
+        LEFT JOIN teams t2 ON m."team2Id" = t2."teamId"
+        LEFT JOIN players o ON m."organiserId" = o."playerId"
+        LEFT JOIN players s ON m."scorerId" = s."playerId"
+        LEFT JOIN tournaments t ON m."tournamentId" = t."tournamentId"
+        WHERE 1=1
+        `;
+        
+        const values = [];
+        
+        // Add location filter
         if (location) {
-            query += ` AND "location" = $${values.length + 1}`;
             values.push(location);
+            query += ` AND m.location = $${values.length}`;
         }
-
+        // Add status filter
         if (status) {
-            query += ` AND "status" = $${values.length + 1}`;
             values.push(status);
+            query += ` AND m.status = $${values.length}`;
         }
-
+        
         const result = await pool.query(query, values);
-        console.log(result.rows);
-        res.status(200).json(result.rows);
+        
+        // Format response
+        const matches = result.rows.map(row => ({
+            id: row.matchId,
+            tournament: row.tournamentId ? { 
+                id: row.tournamentId, 
+                name: row.tournamentName 
+            } : null,
+            team1: { id: row.team1Id, name: row.team1Name },
+            team2: { id: row.team2Id, name: row.team2Name },
+            matchType: row.matchType,
+            oversPerSide: row.oversPerSide,
+            oversPerBowler: row.oversPerBowler,
+            city: row.city,
+            ground: row.ground,
+            startDate: row.startDate,
+            ballType: row.ballType,
+            status: row.status,
+            organizer: row.organiserId ? { 
+                id: row.organiserId, 
+                name: row.organizerName 
+            } : null,
+            scorer: row.scorerId ? { 
+                id: row.scorerId, 
+                name: row.scorerName 
+            } : null,
+            winnerTeamId: row.winnerTeamId,
+            winnerType: row.winnerType,
+            tossWinner: row.tossWinner,
+            tossSelection: row.tossSelection,
+            playerOfMatch: row.playerOfMatch,
+            firstInning: {
+                score: row.firstInningScore,
+                wickets: row.firstInningWicket,
+                overs: row.firstInningOver
+            },
+            secondInning: {
+                score: row.secondInningScore,
+                wickets: row.secondInningWicket,
+                overs: row.secondInningOver
+            },
+            extras: row.extras,
+            wides: row.wides,
+            noBall: row.noBall,
+            createdAt: row.createdAt
+        }));
+        
+        console.log(matches)
+        res.status(200).json({
+            total: result.rows[0]?.totalCount || 0,
+            count: result.rowCount,
+            matches
+        });
+
     } catch (err) {
         console.error("Error retrieving matches:", err);
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
+// const getAllMatches = async (req, res) => {
+//     try {
+//         console.log("allmatch")
+//         const { location, status } = req.query;
+//         let query = "SELECT * FROM \"matches\" WHERE 1=1";
+//         let values = [];
 
-// Retrieve match details by ID
+//         if (location) {
+//             query += ` AND "location" = $${values.length + 1}`;
+//             values.push(location);
+//         }
+
+//         if (status) {
+//             query += ` AND "status" = $${values.length + 1}`;
+//             values.push(status);
+//         }
+
+//         const result = await pool.query(query, values);
+//         console.log(result.rows);
+//         res.status(200).json(result.rows);
+//     } catch (err) {
+//         console.error("Error retrieving matches:", err);
+//         res.status(500).json({ error: "Internal Server Error" });
+//     }
+// };
+
 const getMatchById = async (req, res) => {
     const { matchId } = req.params;
-    console.log(matchId);
 
     try {
+        console.log("match with id")
         // Get base match details
         const matchQuery = `SELECT * FROM "matches" WHERE "matchId" = $1;`;
         const matchResult = await pool.query(matchQuery, [matchId]);
@@ -76,40 +186,54 @@ const getMatchById = async (req, res) => {
         const match = matchResult.rows[0];
         const { team1Id, team2Id } = match;
 
-        // Get all related data in parallel
+        // Get all related data in parallel with player names and team names
         const [
             battingStats,
             bowlingStats,
-            team1Players,
-            team2Players
+            team1Data,
+            team2Data
         ] = await Promise.all([
-            // Batting stats
+            // Batting stats with player names
             pool.query(`
-                SELECT * FROM "BattingInningsPlayerStats" 
-                WHERE "matchId" = $1
-                ORDER BY "inningNumber", "battingPosition"
+                SELECT b.*, p."name" as "batsmanName"
+                FROM "battingInningsPlayerStats" b
+                JOIN "players" p ON b."batsmanId" = p."playerId"
+                WHERE b."matchId" = $1
+                ORDER BY b."inningNumber", b."battingPosition"
             `, [matchId]),
             
-            // Bowling stats
+            // Bowling stats with player names
             pool.query(`
-                SELECT * FROM "BowlingInningsPlayerStats" 
-                WHERE "matchId" = $1
-                ORDER BY "inningNumber", "bowlerPosition"
+                SELECT bw.*, p."name" as "bowlerName"
+                FROM "bowlingInningsPlayerStats" bw
+                JOIN "players" p ON bw."bowlerId" = p."playerId"
+                WHERE bw."matchId" = $1
+                ORDER BY bw."inningNumber", bw."bowlingPosition"
             `, [matchId]),
             
-            // Team 1 players
+            // Team 1 data with players and team name
             pool.query(`
-                SELECT p."playerId", p."name", p."profilePicture"
+                SELECT 
+                    p."playerId", 
+                    p."name", 
+                    p."profilePicture",
+                    t."name" as "teamName"
                 FROM "teamRPlayer" trp
                 JOIN "players" p ON trp."playerId" = p."playerId"
+                JOIN "teams" t ON trp."teamId" = t."teamId"
                 WHERE trp."teamId" = $1
             `, [team1Id]),
             
-            // Team 2 players
+            // Team 2 data with players and team name
             pool.query(`
-                SELECT p."playerId", p."name", p."profilePicture"
+                SELECT 
+                    p."playerId", 
+                    p."name", 
+                    p."profilePicture",
+                    t."name" as "teamName"
                 FROM "teamRPlayer" trp
                 JOIN "players" p ON trp."playerId" = p."playerId"
+                JOIN "teams" t ON trp."teamId" = t."teamId"
                 WHERE trp."teamId" = $1
             `, [team2Id])
         ]);
@@ -123,11 +247,21 @@ const getMatchById = async (req, res) => {
             teams: {
                 team1: {
                     teamId: team1Id,
-                    players: team1Players.rows
+                    name: team1Data.rows[0]?.teamName || 'Team 1', // Fallback name
+                    players: team1Data.rows.map(p => ({
+                        playerId: p.playerId,
+                        name: p.name,
+                        profilePicture: p.profilePicture
+                    }))
                 },
                 team2: {
                     teamId: team2Id,
-                    players: team2Players.rows
+                    name: team2Data.rows[0]?.teamName || 'Team 2', // Fallback name
+                    players: team2Data.rows.map(p => ({
+                        playerId: p.playerId,
+                        name: p.name,
+                        profilePicture: p.profilePicture
+                    }))
                 }
             },
             inning1: {
@@ -139,13 +273,111 @@ const getMatchById = async (req, res) => {
                 bowling: processStats(bowlingStats, 2)
             }
         };
+        console.log(response)
         res.status(200).json(response);
-        console.log(response);
     } catch (err) {
         console.error("Error retrieving match details:", err);
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
+
+// For socket broadcasts (modified version without team players)
+const getMatchDataForBroadcast = async (matchId) => {
+    const data = await getMatchById({ params: { matchId } }, { sendResponse: false });
+    
+    // Remove team from response
+    delete data.teams.team1;
+    delete data.teams.team2;
+    
+    return data;
+};
+// Retrieve match details by ID
+// const getMatchById = async (req, res) => {
+//     const { matchId } = req.params;
+//     console.log(matchId);
+
+//     try {
+//         // Get base match details
+//         const matchQuery = `SELECT * FROM "matches" WHERE "matchId" = $1;`;
+//         const matchResult = await pool.query(matchQuery, [matchId]);
+
+//         if (matchResult.rows.length === 0) {
+//             return res.status(404).json({ error: "Match not found" });
+//         }
+
+//         const match = matchResult.rows[0];
+//         const { team1Id, team2Id } = match;
+
+//         // Get all related data in parallel
+//         const [
+//             battingStats,
+//             bowlingStats,
+//             team1Players,
+//             team2Players
+//         ] = await Promise.all([
+//             // Batting stats
+//             pool.query(`
+//                 SELECT * FROM "BattingInningsPlayerStats" 
+//                 WHERE "matchId" = $1
+//                 ORDER BY "inningNumber", "battingPosition"
+//             `, [matchId]),
+            
+//             // Bowling stats
+//             pool.query(`
+//                 SELECT * FROM "BowlingInningsPlayerStats" 
+//                 WHERE "matchId" = $1
+//                 ORDER BY "inningNumber", "bowlerPosition"
+//             `, [matchId]),
+            
+//             // Team 1 players
+//             pool.query(`
+//                 SELECT p."playerId", p."name", p."profilePicture"
+//                 FROM "teamRPlayer" trp
+//                 JOIN "players" p ON trp."playerId" = p."playerId"
+//                 WHERE trp."teamId" = $1
+//             `, [team1Id]),
+            
+//             // Team 2 players
+//             pool.query(`
+//                 SELECT p."playerId", p."name", p."profilePicture"
+//                 FROM "teamRPlayer" trp
+//                 JOIN "players" p ON trp."playerId" = p."playerId"
+//                 WHERE trp."teamId" = $1
+//             `, [team2Id])
+//         ]);
+
+//         // Process into innings structure
+//         const processStats = (stats, inning) => 
+//             stats.rows.filter(row => row.inningnumber === inning);
+
+//         const response = {
+//             ...match,
+//             teams: {
+//                 team1: {
+//                     teamId: team1Id,
+//                     players: team1Players.rows
+//                 },
+//                 team2: {
+//                     teamId: team2Id,
+//                     players: team2Players.rows
+//                 }
+//             },
+//             inning1: {
+//                 batting: processStats(battingStats, 1),
+//                 bowling: processStats(bowlingStats, 1)
+//             },
+//             inning2: {
+//                 batting: processStats(battingStats, 2),
+//                 bowling: processStats(bowlingStats, 2)
+//             }
+//         };
+//         res.status(200).json(response);
+//         console.log(response);
+//     } catch (err) {
+//         console.error("Error retrieving match details:", err);
+//         res.status(500).json({ error: "Internal Server Error" });
+//     }
+// };
 
 // Parameter(matchId,map{key:value})
 const updateMatch = async (req, res) => {
@@ -267,7 +499,7 @@ const getMatchPlayingSquad = async (req, res) => {
 
 
 
-export {insertMatch,updateMatch,getMatchById,getAllMatches,getMatchPlayingSquad,updateMatchPlayingSquad}
+export {insertMatch,updateMatch,getMatchById,getAllMatches,getMatchPlayingSquad,updateMatchPlayingSquad,getMatchDataForBroadcast}
 
 
 
