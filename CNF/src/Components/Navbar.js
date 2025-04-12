@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 import { useAuth0 } from "@auth0/auth0-react";
@@ -12,13 +12,35 @@ const Navbar = () => {
   const [searchVisible, setSearchVisible] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const navigate = useNavigate();
-  const {playerId}=usePlayer();
-  const { isAuthenticated, user } = useAuth0(); // Get Auth0 user info
+  const { playerId } = usePlayer();
+  const { isAuthenticated } = useAuth0();
+
+  const userDropdownRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        userDropdownRef.current &&
+        !userDropdownRef.current.contains(event.target)
+      ) {
+        setUserMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Function to close dropdown on link click
+  const handleUserLinkClick = () => {
+    setUserMenuOpen(false);
+  };
 
   return (
     <div className="navbar-container">
       {/* Logo */}
-      <div className="logo" onClick={() => navigate("/")}>CricNow</div>
+      <div className="logo" onClick={() => navigate("/")}>scoreNow</div>
 
       {/* Navbar Links */}
       <nav className="navbar">
@@ -49,19 +71,19 @@ const Navbar = () => {
 
         {/* Authenticated User Dropdown */}
         {isAuthenticated ? (
-          <div className="user-dropdown">
+          <div className="user-dropdown" ref={userDropdownRef}>
             <div className="user-icon" onClick={() => setUserMenuOpen(!userMenuOpen)}>
-            <img src="/Images/user_profile.png" className="profile-icon-logo" alt="Player Profile Icon"/>
+              <img src="/Images/user_profile.png" className="profile-icon-logo" alt="Player Profile Icon" />
             </div>
             {userMenuOpen && (
               <ul className="user-menu">
-                <li><Link to={`/players/${playerId}`}>Profile</Link></li>
-                <li><Link to={`/players/${playerId}/matches`}>My Matches</Link></li>
-                <li><Link to={`/players/${playerId}/teams`}>My Teams</Link></li>
-                <li><Link to={`/players/${playerId}/tournaments`}>My Tournaments</Link></li>
-                <li><Link to={`/players/${playerId}/organisedMatches`}>Organize Matches</Link></li>
-                <li><Link to={`/players/${playerId}/organisedTournaments`}>Organized Tournaments</Link></li>
-                <li><LogoutButton /></li>
+                <li><Link to={`/players/${playerId}`} onClick={handleUserLinkClick}>Profile</Link></li>
+                <li><Link to={`/players/${playerId}/matches`} onClick={handleUserLinkClick}>My Matches</Link></li>
+                <li><Link to={`/players/${playerId}/teams`} onClick={handleUserLinkClick}>My Teams</Link></li>
+                <li><Link to={`/players/${playerId}/tournaments`} onClick={handleUserLinkClick}>My Tournaments</Link></li>
+                <li><Link to={`/players/${playerId}/organisedMatches`} onClick={handleUserLinkClick}>Organize Matches</Link></li>
+                <li><Link to={`/players/${playerId}/organisedTournaments`} onClick={handleUserLinkClick}>Organized Tournaments</Link></li>
+                <li className="lgt-btn"><LogoutButton /></li>
               </ul>
             )}
           </div>
@@ -69,7 +91,7 @@ const Navbar = () => {
           <LoginButton />
         )}
 
-        {/* Mobile Menu */}
+        {/* Mobile Menu Toggle */}
         <button className="menu-btn" onClick={() => setIsOpen(!isOpen)}>
           {isOpen ? "✖" : "☰"}
         </button>
