@@ -40,7 +40,12 @@ const Navbar = () => {
   return (
     <div className="navbar-container">
       {/* Logo */}
-      <div className="logo" onClick={() => navigate("/")}>scoreNow</div>
+      <div className="logo" onClick={() => navigate("/")}>
+        <img
+          src="/Images/logo.png"
+          alt="ScoreNow Logo" 
+          className="logo-image"
+        />ScoreNow</div>
 
       {/* Navbar Links */}
       <nav className="navbar">
