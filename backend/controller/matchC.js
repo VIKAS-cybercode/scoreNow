@@ -50,88 +50,98 @@ const insertMatch = async (req, res) => {
 
 const getAllMatches = async (req, res) => {
     try {
-        console.log("allmatch")
-        const { location, status} = req.query;
-        
+        console.log("allmatch");
+        const { location, status } = req.query;
+
         let query = `
         SELECT 
-        m.*,
-        t1.name AS "team1Name",
-        t2.name AS "team2Name",
-        o.name AS "organizerName",
-        s.name AS "scorerName",
-        t.name AS "tournamentName",
-        COUNT(*) OVER() AS "totalCount"
+            m."matchId", m."tournamentId", m."team1Id", m."team2Id",
+            m."matchType", m."oversPerSide", m."city", m."ground", m."startDate",
+            m."status", m."organiserId", m."scorerId",
+            m."winnerTeamId", wt.name AS "winnerTeamName", m."winnerType",
+            m."tossWinner", tw.name AS "tossWinnerName", m."tossSelection",
+            m."firstInningScore", m."firstInningWicket", m."firstInningOver",
+            m."secondInningScore", m."secondInningWicket", m."secondInningOver",
+            m."firstInningExtras", m."firstInningWides", m."firstInningNoBall",
+            m."secondInningExtras", m."secondInningWides", m."secondInningNoBall",
+            t1.name AS "team1Name", t2.name AS "team2Name",
+            o.name AS "organizerName", s.name AS "scorerName",
+            t.name AS "tournamentName",
+            COUNT(*) OVER() AS "totalCount"
         FROM matches m
         LEFT JOIN teams t1 ON m."team1Id" = t1."teamId"
         LEFT JOIN teams t2 ON m."team2Id" = t2."teamId"
         LEFT JOIN players o ON m."organiserId" = o."playerId"
         LEFT JOIN players s ON m."scorerId" = s."playerId"
         LEFT JOIN tournaments t ON m."tournamentId" = t."tournamentId"
+        LEFT JOIN teams wt ON m."winnerTeamId" = wt."teamId"
+        LEFT JOIN teams tw ON m."tossWinner" = tw."teamId"
         WHERE 1=1
         `;
-        
+
         const values = [];
-        
-        // Add location filter
+
         if (location) {
             values.push(location);
-            query += ` AND m.location = $${values.length}`;
+            query += ` AND m.city = $${values.length}`; // assuming location maps to 'city'
         }
-        // Add status filter
+
         if (status) {
             values.push(status);
             query += ` AND m.status = $${values.length}`;
         }
-        
+
         const result = await pool.query(query, values);
-        
-        // Format response
+
         const matches = result.rows.map(row => ({
             id: row.matchId,
-            tournament: row.tournamentId ? { 
-                id: row.tournamentId, 
-                name: row.tournamentName 
+            tournament: row.tournamentId ? {
+                id: row.tournamentId,
+                name: row.tournamentName
             } : null,
             team1: { id: row.team1Id, name: row.team1Name },
             team2: { id: row.team2Id, name: row.team2Name },
             matchType: row.matchType,
             oversPerSide: row.oversPerSide,
-            oversPerBowler: row.oversPerBowler,
             city: row.city,
             ground: row.ground,
             startDate: row.startDate,
-            ballType: row.ballType,
             status: row.status,
-            organizer: row.organiserId ? { 
-                id: row.organiserId, 
-                name: row.organizerName 
+            organizer: row.organiserId ? {
+                id: row.organiserId,
+                name: row.organizerName
             } : null,
-            scorer: row.scorerId ? { 
-                id: row.scorerId, 
-                name: row.scorerName 
+            scorer: row.scorerId ? {
+                id: row.scorerId,
+                name: row.scorerName
             } : null,
-            winnerTeamId: row.winnerTeamId,
+            winnerTeam: row.winnerTeamId ? {
+                id: row.winnerTeamId,
+                name: row.winnerTeamName
+            } : null,
             winnerType: row.winnerType,
-            tossWinner: row.tossWinner,
+            tossWinner: row.tossWinner ? {
+                id: row.tossWinner,
+                name: row.tossWinnerName
+            } : null,
             tossSelection: row.tossSelection,
-            playerOfMatch: row.playerOfMatch,
             firstInning: {
                 score: row.firstInningScore,
                 wickets: row.firstInningWicket,
-                overs: row.firstInningOver
+                overs: row.firstInningOver,
+                extras: row.firstInningExtras,
+                wides: row.firstInningWides,
+                noBall: row.firstInningNoBall
             },
             secondInning: {
                 score: row.secondInningScore,
                 wickets: row.secondInningWicket,
-                overs: row.secondInningOver
-            },
-            extras: row.extras,
-            wides: row.wides,
-            noBall: row.noBall,
-            createdAt: row.createdAt
+                overs: row.secondInningOver,
+                extras: row.secondInningExtras,
+                wides: row.secondInningWides,
+                noBall: row.secondInningNoBall
+            }
         }));
-        
         console.log(matches)
         res.status(200).json({
             total: result.rows[0]?.totalCount || 0,
@@ -144,6 +154,7 @@ const getAllMatches = async (req, res) => {
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
+
 // const getAllMatches = async (req, res) => {
 //     try {
 //         console.log("allmatch")
@@ -291,95 +302,7 @@ const getMatchDataForBroadcast = async (matchId) => {
     
     return data;
 };
-// Retrieve match details by ID
-// const getMatchById = async (req, res) => {
-//     const { matchId } = req.params;
-//     console.log(matchId);
 
-//     try {
-//         // Get base match details
-//         const matchQuery = `SELECT * FROM "matches" WHERE "matchId" = $1;`;
-//         const matchResult = await pool.query(matchQuery, [matchId]);
-
-//         if (matchResult.rows.length === 0) {
-//             return res.status(404).json({ error: "Match not found" });
-//         }
-
-//         const match = matchResult.rows[0];
-//         const { team1Id, team2Id } = match;
-
-//         // Get all related data in parallel
-//         const [
-//             battingStats,
-//             bowlingStats,
-//             team1Players,
-//             team2Players
-//         ] = await Promise.all([
-//             // Batting stats
-//             pool.query(`
-//                 SELECT * FROM "BattingInningsPlayerStats" 
-//                 WHERE "matchId" = $1
-//                 ORDER BY "inningNumber", "battingPosition"
-//             `, [matchId]),
-            
-//             // Bowling stats
-//             pool.query(`
-//                 SELECT * FROM "BowlingInningsPlayerStats" 
-//                 WHERE "matchId" = $1
-//                 ORDER BY "inningNumber", "bowlerPosition"
-//             `, [matchId]),
-            
-//             // Team 1 players
-//             pool.query(`
-//                 SELECT p."playerId", p."name", p."profilePicture"
-//                 FROM "teamRPlayer" trp
-//                 JOIN "players" p ON trp."playerId" = p."playerId"
-//                 WHERE trp."teamId" = $1
-//             `, [team1Id]),
-            
-//             // Team 2 players
-//             pool.query(`
-//                 SELECT p."playerId", p."name", p."profilePicture"
-//                 FROM "teamRPlayer" trp
-//                 JOIN "players" p ON trp."playerId" = p."playerId"
-//                 WHERE trp."teamId" = $1
-//             `, [team2Id])
-//         ]);
-
-//         // Process into innings structure
-//         const processStats = (stats, inning) => 
-//             stats.rows.filter(row => row.inningnumber === inning);
-
-//         const response = {
-//             ...match,
-//             teams: {
-//                 team1: {
-//                     teamId: team1Id,
-//                     players: team1Players.rows
-//                 },
-//                 team2: {
-//                     teamId: team2Id,
-//                     players: team2Players.rows
-//                 }
-//             },
-//             inning1: {
-//                 batting: processStats(battingStats, 1),
-//                 bowling: processStats(bowlingStats, 1)
-//             },
-//             inning2: {
-//                 batting: processStats(battingStats, 2),
-//                 bowling: processStats(bowlingStats, 2)
-//             }
-//         };
-//         res.status(200).json(response);
-//         console.log(response);
-//     } catch (err) {
-//         console.error("Error retrieving match details:", err);
-//         res.status(500).json({ error: "Internal Server Error" });
-//     }
-// };
-
-// Parameter(matchId,map{key:value})
 const updateMatch = async (req, res) => {
     try {
         const { matchId } = req.params; 
@@ -411,36 +334,53 @@ const updateMatch = async (req, res) => {
 };
 
 
-const updateMatchPlayingSquad = async (req, res) => {
-    const { matchId, team1Players, team2Players } = req.body;
+const updateMatchTossAndPlayers = async (req, res) => {
+  const { matchId } = req.params;  
+  const { tossWinner, tossSelection, status, squads } = req.body;  
 
-    if (!matchId || !Array.isArray(team1Players) || !Array.isArray(team2Players)) {
-        return res.status(400).json({ error: "Invalid request body" });
+  const client = await pool.connect();
+
+  try {
+    await client.query('BEGIN');  
+
+    //Update the matches table
+    const updateMatchQuery = `
+      UPDATE "matches"
+      SET "tossWinner" = $1, "tossSelection" = $2, "status" = $3
+      WHERE "matchId" = $4;
+    `;
+    await client.query(updateMatchQuery, [tossWinner, tossSelection, status, matchId]);
+
+    // Update the matchRPlayer table for the selected players (mark them as playing)
+    let values = [];
+
+    for (const [teamId, playerIds] of Object.entries(squads)) {
+      playerIds.forEach(playerId => {
+        values.push(`(${matchId}, ${playerId}, ${teamId}, true)`);  
+      });
     }
 
-    const allPlayers = [...team1Players, ...team2Players];
+    const updatePlayersQuery = `
+      INSERT INTO "matchRPlayer" ("matchId", "playerId", "teamId", "isPlaying")
+      VALUES
+        ${values.join(', ')}
+      ON CONFLICT ("matchId", "playerId", "teamId") DO UPDATE
+      SET "isPlaying" = EXCLUDED."isPlaying";
+    `;
 
-    try {
-        // Reset all players in the match to false before updating
-        await pool.query(
-            `UPDATE "matchRPlayer" SET "isPlaying" = false WHERE "matchId" = $1`,
-            [matchId]
-        );
+    await client.query(updatePlayersQuery);
 
-        // Set selected players as playing
-        const query = `
-            UPDATE "matchRPlayer"
-            SET "isPlaying" = true
-            WHERE "matchId" = $1 AND "playerId" = ANY($2);
-        `;
-        await pool.query(query, [matchId, allPlayers]);
-
-        res.status(200).json({ message: "Playing XI updated successfully." });
-    } catch (err) {
-        console.error("Error updating playing XI:", err);
-        res.status(500).json({ error: "Internal Server Error" });
-    }
+    await client.query('COMMIT'); 
+    res.status(200).json({ message: 'Toss result and players updated successfully' });
+  } catch (error) {
+    await client.query('ROLLBACK');  
+    console.error('Error updating toss and players:', error);
+    res.status(500).json({ error: 'Failed to update toss and players' });
+  } finally {
+    client.release();  
+  }
 };
+
 
 const getMatchPlayingSquad = async (req, res) => {
     const { matchId } = req.params;
@@ -499,7 +439,7 @@ const getMatchPlayingSquad = async (req, res) => {
 
 
 
-export {insertMatch,updateMatch,getMatchById,getAllMatches,getMatchPlayingSquad,updateMatchPlayingSquad,getMatchDataForBroadcast}
+export {insertMatch,updateMatch,getMatchById,getAllMatches,getMatchPlayingSquad,updateMatchTossAndPlayers,getMatchDataForBroadcast}
 
 
 
