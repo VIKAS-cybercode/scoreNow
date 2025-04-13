@@ -14,6 +14,8 @@ const Carousel = () => {
           <button type="button" data-bs-target="#carouselExample" data-bs-slide-to="3"></button>
           <button type="button" data-bs-target="#carouselExample" data-bs-slide-to="4"></button>
           <button type="button" data-bs-target="#carouselExample" data-bs-slide-to="5"></button>
+          <button type="button" data-bs-target="#carouselExample" data-bs-slide-to="6"></button>
+          <button type="button" data-bs-target="#carouselExample" data-bs-slide-to="7"></button>
         </div>
 
         {/* Carousel Inner */}
@@ -28,13 +30,19 @@ const Carousel = () => {
             <img src="/images/slide3.jpg" className="d-block w-100" alt="Slide 3" />
           </div>
           <div className="carousel-item" data-bs-interval="2000">
-            <img src="/images/aksh-yadav-bY4cqxp7vos-unsplash.jpg" className="d-block w-100" alt="Slide 4" />
+            <img src="/images/slide4.jpg" className="d-block w-100" alt="Slide 4" />
           </div>
           <div className="carousel-item" data-bs-interval="2000">
-            <img src="/images/sefton-marks-xEvYH8fiCWk-unsplash.jpg" className="d-block w-100" alt="Slide 5" />
+            <img src="/images/slide5.jpg" className="d-block w-100" alt="Slide 5" />
           </div>
           <div className="carousel-item" data-bs-interval="2000">
-            <img src="/images/samarth-shirke-ghxL3qOfkPo-unsplash.jpg" className="d-block w-100" alt="Slide 6" />
+            <img src="/images/slide6.jpg" className="d-block w-100" alt="Slide 6" />
+          </div>
+          <div className="carousel-item" data-bs-interval="2000">
+            <img src="/images/slide7.jpg" className="d-block w-100" alt="Slide 7" />
+          </div>
+          <div className="carousel-item" data-bs-interval="2000">
+            <img src="/images/slide8.webp" className="d-block w-100" alt="Slide 8" />
           </div>
         </div>
 
