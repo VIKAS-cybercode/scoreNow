@@ -52,6 +52,11 @@ a:hover{
   color: white;
   cursor:pointer;
 }
+/* Logo image styling */
+.logo img.logo-image {
+  height: 75px;
+  cursor: pointer;
+}
 
 /* Navbar */
 .navbar {
