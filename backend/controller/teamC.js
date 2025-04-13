@@ -2,25 +2,38 @@ import pool from '../models/db.js';
 
 // Enter captain ID
 const insertTeam = async (req, res) => {
-    const { name, location, profilePicture } = req.body;
+    const { name, location, profilePicture, captainId } = req.body;
 
-    const query = `
-        INSERT INTO "teams" (
-            "name", "location", "profilePicture"
-        ) VALUES (
-            $1, $2, $3
-        ) RETURNING *;
-    `;
-
-    const values = [name, location, profilePicture];
-
+    const client = await pool.connect(); // Acquire a client for transaction
     try {
-        const result = await pool.query(query, values);
-        console.log("Team inserted:", result.rows[0]);
-        res.status(201).json({ success: true, team: result.rows[0] });
+        await client.query('BEGIN'); // Start transaction
+
+        // 1. Insert the team
+        const teamQuery = `
+            INSERT INTO "teams" ("name", "location", "profilePicture", "captainId")
+            VALUES ($1, $2, $3, $4)
+            RETURNING *;
+        `;
+        const teamResult = await client.query(teamQuery, [
+            name, location, profilePicture, captainId
+        ]);
+        const team = teamResult.rows[0];
+        console.log("Team inserted:", team);
+
+        // 2. Add captain to teamRPlayer using the same client
+        await client.query(`
+            INSERT INTO "teamRPlayer" ("teamId", "playerId")
+            VALUES ($1, $2)
+        `, [team.teamId, captainId]);
+
+        await client.query('COMMIT'); // Commit transaction
+        res.status(201).json({ success: true, team });
     } catch (err) {
-        console.error("Error inserting team:", err);
+        await client.query('ROLLBACK'); // Rollback on error
+        console.error("Error in transaction:", err);
         res.status(500).json({ success: false, error: err.message });
+    } finally {
+        client.release(); 
     }
 };
 
@@ -28,6 +41,7 @@ const getTeamById = async (req, res) => {
     const { teamId } = req.params; 
 
     try {
+        console.log("getteambyid")
         const teamQuery = `
             SELECT * FROM "teams" WHERE "teamId" = $1`;
         
@@ -59,6 +73,7 @@ const getTeamById = async (req, res) => {
             players: playersResult.rows,
             matches: matchesResult.rows
         };
+        console.log(response);
 
         res.status(200).json(response);
         
@@ -69,10 +84,12 @@ const getTeamById = async (req, res) => {
 };
 const getAllTeams = async (req, res) => {
     try {
+        console.log("getallteams")
         const query = `SELECT * FROM "teams" ORDER BY "name" ASC;`; // Sorting by name (optional)
         const result = await pool.query(query);
-        //console.log(result);
-        res.status(200).json({ success: true, teams: result.rows });
+        console.log(result.rows);
+        res.status(200).json(result.rows );
+        // console.log()
     } catch (err) {
         console.error("Error fetching teams:", err);
         res.status(500).json({ success: false, error: err.message });
