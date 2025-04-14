@@ -62,19 +62,20 @@ export default function CreateMatch() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch("/api/match", {
+      const response = await fetch("http://localhost:5000/api/matches", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(match),
       });
+      console.log(match)
 
       if (!response.ok) throw new Error("Failed to create match");
 
       const data = await response.json();
       console.log("Match Created:", data);
-
+      
       // Redirect to /playerid/matches/matchid
-      navigate(`/${playerId}/matches/${data.matchId}`);
+      navigate(`/matches/${data}`);
     } catch (error) {
       console.error("Error creating match:", error);
     }
@@ -103,12 +104,15 @@ export default function CreateMatch() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
           <ul className="list-group">
-            {teams.filter(team => team.name.toLowerCase().includes(searchTerm.toLowerCase())).map((team) => (
-              <li key={team.teamId} className="list-group-item list-group-item-action" onClick={() => selectTeam(team.teamId)}>
-                {team.name}
-              </li>
-            ))}
+              {Array.isArray(teams) && teams.filter(team => 
+                  team.name.toLowerCase().includes(searchTerm.toLowerCase())
+              ).map(team => (
+                  <li key={team.teamId} className="list-group-item list-group-item-action" onClick={() => selectTeam(team.teamId)}>
+                      {team.name}
+                  </li>
+              ))}
           </ul>
+
           <button className="btn btn-danger mt-2 w-100" onClick={() => setShowPopup(false)}>Close</button>
         </div>
       )}
@@ -132,10 +136,10 @@ export default function CreateMatch() {
             </button>
           </div>
           <div className="mb-3">
-            <input type="text" name="officialName" className="form-control" placeholder="Official Name" onChange={handleChange} />
+            <input type="number" name="organiserId" className="form-control" placeholder="OfficialId" onChange={handleChange} />
           </div>
           <div className="mb-3">
-            <input type="text" name="scorerName" className="form-control" placeholder="scorer Name" onChange={handleChange} />
+            <input type="number" name="scorerId" className="form-control" placeholder="scorerId" onChange={handleChange} />
           </div>
           <div className="mb-3">
           <p className="text-center mb-2">Select Ball Type:</p>
