@@ -9,6 +9,7 @@ import playerR from './routes/playerR.js'
 import matchR from './routes/matchR.js'
 import teamR from './routes/teamR.js'
 import tournamentR from './routes/tournamentR.js'
+import newsR from './routes/newsR.js'
 import { createPlayersTable } from './models/playerM.js';
 import {createMatchesTable} from './models/matchM.js';
 import { createTeamsTable } from './models/teamsM.js';
@@ -34,6 +35,7 @@ import { createMatchRPlayerTable } from './models/matchRPlayer.js';
 const app = express()
 app.use(cors());
 app.use(express.json());
+app.use('/api/cricket-news',newsR);
 
 const server = http.createServer(app);
 const io = new Server(server, {
