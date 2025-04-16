@@ -1,41 +1,36 @@
 import React, { useState } from 'react';
 import './TeamsTab.css';
 
-const teamPlayers = {
-  'SAM FM': [
-    { id: 'SAM001', name: 'Azeem', photo: 'https://via.placeholder.com/80' },
-    { id: 'SAM002', name: 'Salman Sid', photo: 'https://via.placeholder.com/80' },
-    { id: 'SAM003', name: 'Shareek', photo: 'https://via.placeholder.com/80' },
-    { id: 'SAM004', name: 'Raj', photo: 'https://via.placeholder.com/80' }
-  ],
-  'Opponent FC': [
-    { id: 'OPP001', name: 'Umar Turf', photo: 'https://via.placeholder.com/80' },
-    { id: 'OPP002', name: 'Md Sadiq', photo: 'https://via.placeholder.com/80' },
-    { id: 'OPP003', name: 'Ali Turf', photo: 'https://via.placeholder.com/80' },
-    { id: 'OPP004', name: 'Zain', photo: 'https://via.placeholder.com/80' }
-  ]
-};
+const TeamsTab = ({ teams }) => {
+  // Transform incoming teams object into the desired structure
+  const teamPlayers = {};
+  Object.values(teams).forEach(team => {
+    teamPlayers[team.name] = team.players.map(player => ({
+      id: player.playerId,
+      name: player.name,
+      photo: player.profilePicture || 'https://via.placeholder.com/80',
+    }));
+  });
 
-const TeamsTab = () => {
-  const [selectedTeam, setSelectedTeam] = useState('SAM FM');
-  const teams = Object.keys(teamPlayers);
+  const teamNames = Object.keys(teamPlayers);
+  const [selectedTeam, setSelectedTeam] = useState(teamNames[0]); // default to first team
 
   return (
     <div className="teams-container">
-      {/* Toggle Tabs */}
+      {/* Team Tabs */}
       <div className="team-tabs">
-        {teams.map((team) => (
+        {teamNames.map((teamName) => (
           <button
-            key={team}
-            className={`team-tab ${selectedTeam === team ? 'active' : ''}`}
-            onClick={() => setSelectedTeam(team)}
+            key={teamName}
+            className={`team-tab ${selectedTeam === teamName ? 'active' : ''}`}
+            onClick={() => setSelectedTeam(teamName)}
           >
-            {team}
+            {teamName}
           </button>
         ))}
       </div>
 
-      {/* Player Cards */}
+      {/* Players Grid */}
       <div className="players-grid">
         {teamPlayers[selectedTeam].map((player) => (
           <div key={player.id} className="player-card">
