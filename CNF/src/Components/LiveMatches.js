@@ -78,7 +78,7 @@ const LiveMatches = () => {
       try {
         const res = await fetch(endpoint);
         const data = await res.json();
-        console.log("Fetched data:", data);
+        console.log("Fetched data:",endpoint, data);
 
         const matchesArray = Array.isArray(data.matches) ? data.matches : [];
 
@@ -181,21 +181,20 @@ const LiveMatches = () => {
               <h3 className="team2">{match.team2?.name || "Team 2"}</h3>
 
               <p className="score">
-                {match.firstInning?.score ?? 0},{" "}
+                {match.firstInning?.score ?? 0}{"/ "}
                 {match.firstInning?.wickets ?? 0} wickets
               </p>
 
               {match.secondInning && (
                 <p className="score">
-                  {match.secondInning.score ?? 0},{" "}
+                  {match.secondInning.score ?? 0}{"/ "}
                   {match.secondInning.wickets ?? 0} wickets
                 </p>
               )}
 
-              <span className="live-badge">{match.organizer?.name || "Organizer"}</span>
               <p className="toss">
                 {match.tossWinner
-                  ? `${match.tossWinner} won the toss`
+                  ? `${match.tossWinner.name} won the toss`
                   : "Toss yet to happen"}
               </p>
               <span className="live-badge">{match.status || "Status Unknown"}</span>
