@@ -1,5 +1,6 @@
 import "./LiveStream.css";
 import React, { useEffect, useRef, useState } from "react";
+import { useParams } from "react-router-dom";
 import {
   MeetingProvider,
   useMeeting,
@@ -7,30 +8,34 @@ import {
   Constants,
 } from "@videosdk.live/react-sdk";
 import { authToken, createStream } from "./API";
+import socket from "./socket";
+function JoinView({ initializeStream, isOrganiser ,activeStream}) {
+  //const activeStreamId = sessionStorage.getItem("activeStreamId");
+  const storedStreamId = sessionStorage.getItem("activeStreamId");
 
-function JoinView({ initializeStream, isOrganiser }) {
-  const activeStreamId = localStorage.getItem("activeStreamId");
-
+  // This example prefers the activeStream prop, if available.
+  const activeStreamId = activeStream || storedStreamId;
+  //console.log(activeStreamId);
   const handleAction = async (mode) => {
     await initializeStream("", mode);
   };
 
   return (
     <div className="video-container">
-      {/* Only organiser sees this if there's no active stream */}
+      {/* If an organiser and there is no active stream, show button to create one */}
       {isOrganiser && !activeStreamId && (
         <button onClick={() => handleAction(Constants.modes.SEND_AND_RECV)}>
           Create Live Stream as Host
         </button>
       )}
 
-      {/* All users can join if a stream is active */}
+      {/* Show join button if a live stream is available */}
       {activeStreamId ? (
         <button onClick={() => handleAction(Constants.modes.RECV_ONLY)}>
-          Join as Audience
+          Join Live Stream as Audience
         </button>
       ) : (
-        // Only show this message to non-organisers
+        // For non-organisers, show a message when no stream is active.
         !isOrganiser && <p>No active livestreams</p>
       )}
     </div>
@@ -38,7 +43,7 @@ function JoinView({ initializeStream, isOrganiser }) {
 }
 
 
-function LSContainer({ streamId, onLeave }) {
+function LSContainer({ streamId, onLeave,matchData,currentInning }) {
   const [joined, setJoined] = useState(false);
   const { join } = useMeeting({
     onMeetingJoined: () => setJoined(true),
@@ -49,12 +54,12 @@ function LSContainer({ streamId, onLeave }) {
   return (
     <div className="container">
       <h3>Stream Id: {streamId}</h3>
-      {joined ? <StreamView /> : <button onClick={join}>Join Stream</button>}
+      {joined ? <StreamView matchData={matchData} currentInning={currentInning} /> : <button onClick={join}>Join Stream</button>}
     </div>
   );
 }
 
-function StreamView() {
+function StreamView({matchData,currentInning}) {
   const { participants } = useMeeting();
   const [isFullScreen, setIsFullScreen] = useState(false);
   const fullScreenRef = useRef(null);
@@ -99,15 +104,31 @@ function StreamView() {
     }
   };
 
-  function MatchScore() {
+  function MatchScore({ matchData ,currentInning}) {
+    if (!matchData || !matchData.teams || matchData.teams.length === 0) {
+      return <div>Loading match score...</div>;
+    }
+  
+    const battingTeam = matchData.teams[0]; // assuming index 0 is current batting
+    const target = currentInning === 2 ? matchData.teams[1].runs + 1 : null;
+  
     return (
       <div className="match-score">
-        <span className="team-name">IND</span>
-        <span className="score">150/3</span>
-        <span className="overs">Overs: 15.2/20</span>
-        <span className="target">Target: 180</span>
-        <span className="run-rate">RR: 8.3</span>
+        <span className="team-name">{battingTeam.name}</span>
+        <span className="score">
+          {battingTeam.runs}/{battingTeam.wickets}
+        </span>
+        <span className="overs">
+          Overs: {battingTeam.overs}/{matchData.oversPerSide}
+        </span>
+        {target && <span className="target">Target: {target}</span>}
   
+        {/* Optional Run Rate */}
+        <span className="run-rate">
+          RR: {battingTeam.overs > 0 ? (battingTeam.runs / battingTeam.overs).toFixed(2) : '0.00'}
+        </span>
+  
+        {/* Hardcoded Batsmen until you fetch live player data */}
         <span className="batsman">Virat Kohli* 55(38)</span>
         <span className="batsman">Rohit Sharma 45(28)</span>
   
@@ -126,6 +147,7 @@ function StreamView() {
   
   
   
+  
 
   return (
     <div ref={fullScreenRef} className={`stream-view ${isFullScreen ? "fullscreen" : ""}`}>
@@ -139,7 +161,7 @@ function StreamView() {
     <Participant participantId={p.id} key={p.id} isFullScreen={isFullScreen} />
   ))}
 
-      {isFullScreen && <MatchScore />}
+      {isFullScreen && <MatchScore matchData={matchData} currentInning={currentInning} />}
     </div>
   );
 }
@@ -176,11 +198,18 @@ function Participant({ participantId,isFullScreen }) {
   );
 }
 
-function LSControls({toggleFullScreen ,isFullScreen}) {
-  const { leave } = useMeeting();
+function LSControls({ toggleFullScreen, isFullScreen }) {
+  const { leave, localMicOn, toggleMic } = useMeeting();
+
   return (
     <div className="controls">
       <button onClick={leave}>Leave</button>
+
+      <button onClick={() => toggleMic()} className="mute-btn">
+        {localMicOn ? "Mute 🔇" : "Unmute 🔊"}
+      </button>
+
+
       <button onClick={toggleFullScreen} className="fullscreen-btn">
         {isFullScreen ? "Go Minimize" : "Go Full Screen"}
       </button>
@@ -188,22 +217,27 @@ function LSControls({toggleFullScreen ,isFullScreen}) {
   );
 }
 
-function LiveStream( {isOrganiser}) {
-  const [streamId, setStreamId] = useState(null);
-  const [mode, setMode] = useState(Constants.modes.SEND_AND_RECV);
-  const isHostUser = true;
 
+
+function LiveStream( {isOrganiser,matchData,currentInning}) {
+  const [streamId, setStreamId] = useState(null);
+  const [mode, setMode] = useState(isOrganiser ? Constants.modes.SEND_AND_RECV : Constants.modes.RECV_ONLY);
+  const [activeStream, setActiveStream] = useState(null);
+  //const isHostUser = true;
+  const {matchId}=useParams();
+  let streamLocal=null;
   const initializeStream = async (id, userMode) => {
     let newStreamId;
     if (userMode === Constants.modes.SEND_AND_RECV) {
       if (!id) {
         newStreamId = await createStream({ token: authToken });
-        localStorage.setItem("activeStreamId", newStreamId);
+        sessionStorage.setItem("activeStreamId", newStreamId);
+        socket.emit("liveStream",{liveStreamId:newStreamId,matchId:matchId});
       } else {
         newStreamId = id;
       }
     } else if (userMode === Constants.modes.RECV_ONLY) {
-      newStreamId = localStorage.getItem("activeStreamId");
+      newStreamId = sessionStorage.getItem("activeStreamId");
       if (!newStreamId) {
         alert("No active livestream available!");
         return;
@@ -215,9 +249,27 @@ function LiveStream( {isOrganiser}) {
 
   const onStreamLeave = () => {
     setStreamId(null);
-    localStorage.removeItem("activeStreamId");
+    sessionStorage.removeItem("activeStreamId");
   };
+  useEffect(() => {
+    const handleLiveStream = ({ liveStreamId }) => {
+      console.log("Received live stream ID:", liveStreamId);
+      // Set activeStream regardless of mode, if streamId is not already set.
+      if (!streamId) {
+        setActiveStream(liveStreamId);
+        //console.log(streamLocal);
+        streamLocal=liveStreamId;
+        sessionStorage.setItem("activeStreamId", liveStreamId);
+      }
+    };
 
+    socket.on("liveStreamClient", handleLiveStream);
+    
+    return () => {
+      socket.off("liveStreamClient", handleLiveStream);
+    };
+  }, [mode,streamId]);
+  //streamLocal=activeStream;
   return authToken && streamId ? (
     <MeetingProvider
       config={{
@@ -229,10 +281,10 @@ function LiveStream( {isOrganiser}) {
       }}
       token={authToken}
     >
-      <LSContainer streamId={streamId} onLeave={onStreamLeave} />
+      <LSContainer streamId={streamId} onLeave={onStreamLeave}  matchData={matchData} currentInning={currentInning}/>
     </MeetingProvider>
   ) : (
-    <JoinView initializeStream={initializeStream} isOrganiser={isOrganiser} />
+    <JoinView initializeStream={initializeStream} isOrganiser={isOrganiser} activeStream={streamLocal} />
 
   );
 }
