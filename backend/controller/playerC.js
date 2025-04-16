@@ -1,4 +1,5 @@
 import pool from '../models/db.js';
+import { baseFrom, executeMatchQuery, matchColumns } from './matchC.js';
 
 // Function to insert a new player and initialize their stats
 const insertPlayer = async (req, res) => {
@@ -149,23 +150,41 @@ const getPlayerProfileById = async (req, res) => {
         res.status(500).json({ error: "Database error" });
     }
   };
+const getOrganisedMatches = async (req, res) => {
+    const { playerId } = req.params;
+    try {
+        console.log("orgmatches")
+        const query = `
+            SELECT ${matchColumns}
+            ${baseFrom}
+            WHERE (m."organiserId" = $1 OR m."scorerId" = $1)
+        `;
+        const result = await executeMatchQuery(query, [playerId]);
+        console.log(result)
+        //result contain { total: 0, count: 0, matches: [] }
+        res.status(200).json(result);
+    } catch (err) {
+        console.error("Error retrieving organized matches:", err);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+};
+
 const getMyMatches = async (req, res) => {
     const { playerId } = req.params;
-    console.log("mymatches");
-    console.log(playerId);
-    const query = `
-        SELECT "matches".* 
-        FROM "matches"
-        INNER JOIN "matchRPlayer" 
-        ON "matches"."matchId" = "matchRPlayer"."matchId"
-        WHERE "matchRPlayer"."playerId" = $1;
-    `;
-
     try {
-        const result = await pool.query(query, [playerId]);
-        res.status(200).json(result.rows);
+        console.log("mymatch")
+        const query = `
+            SELECT ${matchColumns}
+            ${baseFrom}
+            INNER JOIN "matchRPlayer" mr ON m."matchId" = mr."matchId"
+            WHERE mr."playerId" = $1
+        `;
+        const result = await executeMatchQuery(query, [playerId]);
+        console.log(result)
+        //result contain { total: 0, count: 0, matches: [] }
+        res.status(200).json(result);
     } catch (err) {
-        console.error("Error retrieving matches:", err);
+        console.error("Error retrieving my matches:", err);
         res.status(500).json({ error: "Internal Server Error" });
     }
 };
@@ -192,21 +211,7 @@ const getMyTeams = async (req, res) => {
     }
 };
 
-const getOrganisedMatches = async (req, res) => {
-    const { playerId } = req.params;
-    console.log("orgamatch");
-    console.log(playerId);
-    const query = `SELECT * FROM "matches" WHERE "organiserId" = $1 OR "scorerId" = $1;`;
 
-    try {
-        const result = await pool.query(query, [playerId]);
-        console.log(result.rows);
-        res.status(200).json(result.rows);
-    } catch (err) {
-        console.error("Error retrieving matches:", err);
-        res.status(500).json({ error: "Internal Server Error" });
-    }
-};
 
 const getMyTournaments = async (req, res) => {
     const { playerId } = req.params;
