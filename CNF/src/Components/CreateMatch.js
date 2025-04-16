@@ -34,15 +34,19 @@ export default function CreateMatch() {
     if (match.tournamentId) {
       fetch(`http://localhost:5000/api/teams/${match.tournamentId}`)
         .then((res) => res.json())
-        .then((data) => setTeams(data.length > 0 ? data : []))
+        .then((data) => setTeams(Array.isArray(data) ? data : []))
         .catch(() => setTeams([]));
     } else {
       console.log("t");
       fetch("http://localhost:5000/api/teams")
         .then((res) => res.json())
-        .then((data) => setTeams(data))
+        .then((data) => {
+          setTeams(Array.isArray(data) ? data : [])
+          console.log(data);
+    })
         .catch(() => setTeams([]));
     }
+    console.log(teams);
     
   }, [match.tournamentId]);
 
@@ -82,7 +86,7 @@ export default function CreateMatch() {
   };
 
   const openTeamPopup = (field) => {
-    if (!match.tournamentId && teams.length === 0) return;
+    if (!match.tournamentId && (!teams || teams.length === 0)) return;
     setSelectedTeamField(field);
     setShowPopup(true);
   };
@@ -125,13 +129,13 @@ export default function CreateMatch() {
           </div>
           <div className="mb-3">
             <button type="button" className="btn btn-secondary w-100" onClick={() => openTeamPopup("team1Id")}
-              disabled={!match.tournamentId && teams.length === 0}>
+              disabled={!match.tournamentId && (teams?.length === 0)}>
               {match.team1Id ? `Selected Team: ${match.team1Id}` : "Choose Team 1"}
             </button>
           </div>
           <div className="mb-3">
             <button type="button" className="btn btn-secondary w-100" onClick={() => openTeamPopup("team2Id")}
-              disabled={!match.tournamentId && teams.length === 0 }>
+              disabled={!match.tournamentId && (teams?.length === 0)}>
               {match.team2Id ? `Selected Team: ${match.team2Id}` : "Choose Team 2"}
             </button>
           </div>
