@@ -17,95 +17,232 @@ const Match = () => {
   const [isScorer, setIsScorer] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [tossInfo, setTossInfo] = useState({ tossWinner: null, tossSelection: null });
   const Navigate = useNavigate();
   const { playerId } = usePlayer();
   const [showTossModal, setShowTossModal] = useState(false);
-  const [scoreCardData,setScoreCardData]=useState({
-    inning1: {  batters: [], bowlers: [] },
-    inning2: {  batters: [], bowlers: [] }
+  const [scoreCardData, setScoreCardData] = useState({
+    inning1: { batting: [], bowling: [], partnership: "0(0)" },
+    inning2: { batting: [], bowling: [], partnership: "0(0)" }
   });
-  const [teamData,setTeamData]=useState({
-  },);
+  const [currentInning, setCurrentInning] = useState(1);
+  const [teamsData, setTeamsData] = useState({
+    team1: { teamId:null, name: "", players: [] },
+    team2: { teamId:null, name: "", players: [] }
+  });
+  socket.on("inningOverEventClient",(data)=>{
+      setCurrentInning((currentInning)=>currentInning+1)
+  })
+  
   // Transform match data from API
-  const transformMatchData = (data) => ({
-    tournamentName: data.tournamentId ? `Tournament ${data.tournamentId}` : "Friendly Match",
-    ground: data.ground,
-    location: data.city,
-    format: data.matchType === 'limitedOvers' ? 'Limited Overs' : 'Other Format',
-    overs: data.oversPerSide,
-    status: data.status,
-    toss: data.tossWinner 
-      ? `Toss: ${data.teams[data.tossWinner === data.team1Id ? 'team1' : 'team2'].name} ${data.tossSelection}`
-      : 'Toss not yet decided',
-    teams: [
-      { 
-        name: data.teams.team1.name, 
-        runs: data.firstInningScore || 0,
-        wickets: data.firstInningWicket || 0,
-        overs: data.firstInningOver || 0
-      },
-      { 
-        name: data.teams.team2.name, 
-        runs: data.secondInningScore || 0,
-        wickets: data.secondInningWicket || 0,
-        overs: data.secondInningOver || 0
-      }
-    ],
-    inning1: data.inning1,
-    inning2: data.inning2,
-    chaseInfo: data.status === 'live' 
-      ? `${data.teams.team2.name} require ${(data.firstInningScore - data.secondInningScore + 1)} runs in ${(data.oversPerSide * 6 - data.secondInningOver * 6)} balls`
-      : '',
-    projectedScore: data.firstInningScore 
-      ? `Projected: ${Math.round(data.firstInningScore * (data.oversPerSide / data.firstInningOver)) || 0}`
-      : '',
-    lastFiveOvers: "0/0 (0.00)",
-    officials: data.scorerId ? [`Scorer: User ${data.scorerId}`] : [],
-    seriesName: data.tournamentId ? `Tournament ${data.tournamentId}` : "Friendly Match",
-    matchDate: new Date(data.startDate).toLocaleDateString(),
-    organiserId: data.organiserId,
-    scorerId: data.scorerId,
-  });
+  const getInningTeams = (data, inning) => {
+    const team1 = data.teams.team1;
+    const team2 = data.teams.team2;
+    const tossSelection = data.tossSelection.toLowerCase();
+    const tossWinner = data.tossWinner; // team id
+    let battingTeam, bowlingTeam;
 
+    // Determine roles as per inning 1.
+    if (tossSelection === "bat") {
+      battingTeam = tossWinner === team1.teamId ? team1 : team2;
+      bowlingTeam = tossWinner === team1.teamId ? team2 : team1;
+    } else {
+      battingTeam = tossWinner === team1.teamId ? team2 : team1;
+      bowlingTeam = tossWinner === team1.teamId ? team1 : team2;
+    }
+
+    // If it's inning 2, swap the roles.
+    if (inning === 2) {
+      return { battingTeam: bowlingTeam, bowlingTeam: battingTeam };
+    }
+
+    return { battingTeam, bowlingTeam };
+  };
+
+  // Fetch initial match data.
   useEffect(() => {
     const fetchMatchData = async () => {
       try {
         const response = await fetch(`http://localhost:5000/api/matches/${matchId}`);
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        
         const data = await response.json();
         console.log(data);
-        setScoreCardData({ inning1: data.inning1, inning2: data.inning2 });
-        setTeamData({teams:data.teams});
-        const transformed = transformMatchData(data);
-        
-        setMatchData(transformed);
-        setIsScorer(data.scorerId?.toString() === playerId?.toString());
-        setIsOrganiser(data.organiserId?.toString() === playerId?.toString());
+        // Determine current inning from match status (or set manually).
+        // Here we assume matchData.status has some info to determine that.
+        const inning = data.secondInningOver > 0 || data.status === "completed" ? 2 : 1;
+        setCurrentInning(inning);
 
-        socket.emit("join-match", matchId, (socketResponse) => {
-          if (socketResponse.joined) {
-            console.log(`Joined live room: ${matchId}`);
-            if (socketResponse.match) {
-              setMatchData(prev => ({
-                ...prev,
-                ...transformMatchData(socketResponse.match)
-              }));
-            }
+
+        // Determine inning 1 teams for the initial scoreboard.
+        const { battingTeam, bowlingTeam } = getInningTeams(data,inning);
+
+        // Create teams array using inning 1 scores.
+        const teamsScoreData = [
+          {
+            name: battingTeam.name,
+            runs: data.firstInningScore || 0,
+            wickets: data.firstInningWicket || 0,
+            overs: data.firstInningOver || 0,
+          },
+          {
+            name: bowlingTeam.name,
+            runs: data.secondInningScore || 0,
+            wickets: data.secondInningWicket || 0,
+            overs: data.secondInningOver || 0,
           }
-        });
+        ];
 
-        setLoading(false);
+        // Optional: Prepare chaseInfo if applicable.
+        const chaseInfo =
+          data.status === "live" &&
+          data.firstInningScore &&
+          data.secondInningScore
+            ? `${bowlingTeam.name} require ${
+                data.firstInningScore - data.secondInningScore + 1
+              } runs in ${
+                data.oversPerSide * 6 - Math.floor(data.secondInningOver * 6)
+              } balls`
+            : "";
+        
+
+            let tossWinnerTeamName = "";
+            if (data.teams) {
+              const allTeams = Object.values(data.teams);
+              const tossWinnerTeam = allTeams.find(team => team.teamId === data.tossWinner);
+              tossWinnerTeamName = tossWinnerTeam ? tossWinnerTeam.name : "";
+            }
+               
+        // Create transformed match data.
+        const transformedData = {
+          ground: data.ground,
+          scorerId:data.scorerId,
+          organiserId:data.organiserId,
+          city: data.city,
+          matchType: data.matchType,
+          status: data.status,
+          tossSelection: data.tossSelection,
+          tossWinner: data.tossWinner,
+          tossWinnerTeamName,
+          teamsRaw: data.teams, // Store raw teams for re-determining roles.
+          oversPerSide: data.oversPerSide,
+          // Save the teams array for the scoreboard.
+          teams: teamsScoreData,
+          chaseInfo,
+          tournamentName: data.tournamentId ? `Tournament ${data.tournamentId}` : "Friendly Match",
+        };
+        if (data.organiserId === playerId) {
+          setIsOrganiser(true);
+        }
+        if(data.scorerId===playerId){
+          setIsScorer(true);
+        }
+        setMatchData(transformedData);
+
       } catch (err) {
         console.error("Error fetching match data:", err);
         setError(err.message);
+      } finally {
         setLoading(false);
       }
     };
 
     fetchMatchData();
-    return () => socket.emit("leave-room", matchId);
-  }, [matchId, playerId]);
+
+    // Join the match room for live socket updates.
+    socket.emit("join-match", matchId, (response) => {
+      if (response.joined) {
+        console.log("Joined match room successfully");
+      } else {
+        console.log("Could not join match room");
+      }
+    });
+
+    return () => {
+      //socket.off("scoreUpdate", handleScoreUpdate);
+      socket.emit("leave-room", matchId);
+    };
+  }, [matchId,playerId]);
+
+  // Live socket event handling.
+  useEffect(() => {
+    const handleScoreUpdate = (updatedData) => {
+      // Optionally, you may determine current inning logic if it changes
+      // (e.g., when first inning is complete, update currentInning to 2).
+      // For the purpose of this demo, let's assume we update currentInning when firstInningScore stops updating.
+      console.log(updatedData);
+      if (updatedData.firstInningScore !== matchData?.teams[0].runs &&
+          updatedData.secondInningScore === 0) {
+        // Still inning 1.
+        setCurrentInning(1);
+      } else if (updatedData.firstInningScore > 0 && updatedData.secondInningScore >= 0) {
+        // Assume that once second inning starts, currentInning becomes 2.
+        setCurrentInning(2);
+      }
+
+      // Re-determine the teams based on current inning using the stored toss details.
+      const dataForRoles = {
+        teams: matchData.teamsRaw,
+        tossSelection: matchData.tossSelection,
+        tossWinner: matchData.tossWinner,
+      };
+      const { battingTeam, bowlingTeam } = getInningTeams(dataForRoles, currentInning);
+
+      // Update the scoreboard accordingly.
+      const updatedTeamsScoreData =
+        currentInning === 1
+          ? [
+              {
+                name: battingTeam.name,
+                runs: updatedData.firstInningScore,
+                wickets: updatedData.firstInningWicket,
+                overs: updatedData.firstInningOver,
+              },
+              {
+                name: bowlingTeam.name,
+                runs: updatedData.secondInningScore,
+                wickets: updatedData.secondInningWicket,
+                overs: updatedData.secondInningOver,
+              }
+            ]
+          : [
+              // In inning 2, note that scores are for the new batting team.
+              {
+                name: battingTeam.name,
+                runs: updatedData.secondInningScore, // Now the batting team is the team that bowled in inning 1.
+                wickets: updatedData.secondInningWicket,
+                overs: updatedData.secondInningOver,
+              },
+              {
+                name: bowlingTeam.name,
+                runs: updatedData.firstInningScore, // Their first inning scores remain (or might be used differently).
+                wickets: updatedData.firstInningWicket,
+                overs: updatedData.firstInningOver,
+              }
+            ];
+
+      // Optionally update chaseInfo.
+      const updatedChaseInfo =
+        updatedData.status === "live" &&
+        updatedData.firstInningScore &&
+        updatedData.secondInningScore
+          ? `${battingTeam.name} require ${
+              updatedData.firstInningScore - updatedData.secondInningScore + 1
+            } runs in ${updatedData.oversPerSide * 6 - (updatedData.secondInningOver) * 6} balls`
+          : "";
+
+      setMatchData((prevData) => ({
+        ...prevData,
+        teams: updatedTeamsScoreData,
+        chaseInfo: updatedChaseInfo,
+        status: updatedData.status,
+      }));
+    };
+
+    socket.on("ballEventClient", handleScoreUpdate);
+
+    return () => {
+      socket.off("ballEventClient", handleScoreUpdate);
+    };
+  }, [currentInning, matchData]);
 
   useEffect(() => {
     const interval = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -114,9 +251,19 @@ const Match = () => {
 
   const getCurrentInning = () => {
     if (!matchData) return 1;
-    return matchData.status === 'live' ? 
-      (matchData.firstInningScore ? 2 : 1) : 
-      (matchData.secondInningScore ? 2 : 1);
+    
+    // If match is completed, return the last inning
+    if (matchData.status === 'completed') {
+      return matchData.secondInningScore ? 2 : 1;
+    }
+    
+    // If first inning is being played (score exists but second doesn't)
+    if (matchData.teams[0].runs > 0 && matchData.teams[1].runs === 0) {
+      return 1;
+    }
+    
+    // Otherwise it's second inning
+    return 2;
   };
 
   const calculateStrikeRate = (runs, balls) => (balls > 0 ? ((runs / balls) * 100).toFixed(2) : "0.00");
@@ -152,21 +299,21 @@ const Match = () => {
         <header className="tournament-header-match">
           <h1>{matchData.tournamentName}</h1>
           <div className="match-info">
-            <span>{`${matchData.ground}, ${matchData.location}, ${matchData.format}, ${matchData.overs} Ov., ${formattedDay}, ${formattedDate} ${formattedTime}`}</span>
-            <span className="toss-info">{matchData.toss}</span>
+          <span>{`${matchData.ground}, ${matchData.city}, ${matchData.matchType}`}</span>
+          <span className="toss-info">{`Toss: ${matchData.tossWinnerTeamName} chose ${matchData.tossSelection}`}</span>
           </div>
         </header>
 
         <div className="match-layout">
-          <div className="scoreboard">
-            {matchData.teams.map((team, index) => (
-              <h3 key={index} className="team-score">
-                <span className="team-name">{team.name}</span>
-                <span className="score">{`${team.runs}/${team.wickets} (${team.overs} Ov)`}</span>
-              </h3>
-            ))}
-            <p className="chase-info">{matchData.chaseInfo}</p>
-          </div>
+        <div className="scoreboard">
+          {matchData.teams.map((team, index) => (
+            <h3 key={index} className="team-score">
+              <span className="team-name">{team.name}</span>
+              <span className="score">{`${team.runs}/${team.wickets} (${team.overs} Ov)`}</span>
+            </h3>
+          ))}
+          <p className="chase-info">{matchData.chaseInfo}</p>
+        </div>
         </div>
 
         {matchData.status === "scheduled" && (
@@ -181,7 +328,7 @@ const Match = () => {
                     ×
                   </button>
                   <StartMatch 
-                    teams={teamData}
+                    teams={teamsData}
                     matchId={matchId}
                   />
                 </div>
@@ -260,12 +407,12 @@ const Match = () => {
                 <div className="current-partnership">
                   <strong>Current Partnership:</strong> {matchData.inning1?.partnership || '0(0)'}
                 </div>
-                <LiveStream isOrganiser={isOrganiser} />
+                {/* <LiveStream isOrganiser={isOrganiser} /> */}
               </div>
             )}
 
             {activeTab === "SCORECARD" && <ScoreCardTab matchData={scoreCardData} />}
-            {activeTab === "TEAMS" && <TeamsTab teams={teamData} />}
+            {activeTab === "TEAMS" && <TeamsTab teams={matchData.teamsRaw} />}
             {/* Add other tabs as needed */}
           </div>
         </div>
@@ -274,7 +421,7 @@ const Match = () => {
       <div className="main-content-wrapper">
         <div className="main-content">
           <div className="right-column">
-            <LiveStream isOrganiser={isOrganiser} />
+            <LiveStream isOrganiser={isOrganiser} matchData={matchData} currentInning={currentInning} />
             <div className="match-stats">
               <div className="stat-item">
                 <span>Current RR</span>
@@ -288,9 +435,15 @@ const Match = () => {
             <div className="match-officials">
               <h3>Match Officials</h3>
               <div className="officials-list">
-                {matchData.officials.map((official, index) => (
-                  <span key={index}>{official}</span>
-                ))}
+                  <h4>Officials</h4>
+                  <p>
+                    <strong>Organiser:</strong>{" "}
+                    {matchData.organiserName} (ID: {matchData.organiserId})
+                  </p>
+                  <p>
+                    <strong>Scorer:</strong>{" "}
+                    {matchData.scorerName} (ID: {matchData.scorerId})
+                  </p>
               </div>
             </div>
           </div>
