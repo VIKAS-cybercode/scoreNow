@@ -27,6 +27,7 @@ import pool from '../models/db.js';
 const insertBallEvent = async (ballEventData) => {
     const client = await pool.connect();
     try {
+        console.log("insertballevent");
         await client.query('BEGIN');
         // List of valid columns in ballEvent table (adjust according to your schema)
         const validColumns = new Set([
@@ -179,6 +180,7 @@ const insertBallEvent = async (ballEventData) => {
         ]);
 
         await client.query('COMMIT');
+        console.log(ballEvent);
         return ballEvent;
     } catch (err) {
         await client.query('ROLLBACK');
