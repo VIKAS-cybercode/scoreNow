@@ -1,11 +1,21 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import "./StartMatch.css";
 import { useNavigate } from "react-router-dom";
 
 const StartMatch = ({ teams = {}, matchId }) => {
-  const team1 = teams.team1 || { name: "Team 1", players: [] };
-  const team2 = teams.team2 || { name: "Team 2", players: [] };
-
+  // Ensure each team has unique id, name, and players list
+  const team1 = React.useMemo(() => ({
+    teamId: (teams.team1 && teams.team1.teamId) || 1,
+    name: (teams.team1 && teams.team1.name) || "Team 1",
+    players: (teams.team1 && teams.team1.players) || []
+  }), [teams.team1]);
+  
+  const team2 = React.useMemo(() => ({
+    teamId: (teams.team2 && teams.team2.teamId) || 2,
+    name: (teams.team2 && teams.team2.name) || "Team 2",
+    players: (teams.team2 && teams.team2.players) || []
+  }), [teams.team2]);
+ // console.log(teams.team2.teamId);
   const [tossWinner, setTossWinner] = useState("");
   const [decision, setDecision] = useState("");
   const [coinResult, setCoinResult] = useState("");
@@ -14,11 +24,22 @@ const StartMatch = ({ teams = {}, matchId }) => {
   const coinRef = useRef(null);
   const navigate = useNavigate();
 
+  // Instead of just a name, store the full team object in the popup state.
   const [showSquadPopup, setShowSquadPopup] = useState(null);
+
+  // State to track selected players by team id
   const [selectedPlayers, setSelectedPlayers] = useState({
-    [team1.name]: [],
-    [team2.name]: [],
+    [team1.teamId]: [],
+    [team2.teamId]: [],
   });
+
+  // Reset selections when teams change (if needed)
+  useEffect(() => {
+    setSelectedPlayers({
+      [team1.teamId]: [],
+      [team2.teamId]: [],
+    });
+  }, [team1.teamId, team2.teamId]);
 
   const flipCoin = () => {
     if (isFlipping) return;
@@ -45,43 +66,66 @@ const StartMatch = ({ teams = {}, matchId }) => {
     }, flipTime * 1000);
   };
 
-  const openSquadPopup = (teamName) => setShowSquadPopup(teamName);
+  // Ensure that the team object always has a players array
+  const openSquadPopup = (team) => setShowSquadPopup({ ...team, players: team.players || [] });
   const closeSquadPopup = () => setShowSquadPopup(null);
 
   const toggleSelectPlayer = (playerId) => {
-    const currentTeam = showSquadPopup;
-    const currentSelection = selectedPlayers[currentTeam];
+    if (!showSquadPopup) return;
+    const currentTeamId = showSquadPopup.teamId;
 
-    const newSelection = currentSelection.includes(playerId)
-      ? currentSelection.filter((p) => p !== playerId)
-      : [...currentSelection, playerId];
+    setSelectedPlayers((prevSelectedPlayers) => {
+      const currentTeamSelection = prevSelectedPlayers[currentTeamId] || [];
 
-    setSelectedPlayers({
-      ...selectedPlayers,
-      [currentTeam]: newSelection,
+      // Remove if already selected
+      if (currentTeamSelection.includes(playerId)) {
+        return {
+          ...prevSelectedPlayers,
+          [currentTeamId]: currentTeamSelection.filter((id) => id !== playerId),
+        };
+      }
+
+      // Do not allow more than 11 players
+      if (currentTeamSelection.length >= 11) {
+        alert(`You can only select 11 players for ${showSquadPopup.name}!`);
+        return prevSelectedPlayers;
+      }
+
+      // Add the player
+      return {
+        ...prevSelectedPlayers,
+        [currentTeamId]: [...currentTeamSelection, playerId],
+      };
     });
   };
 
   const isSquadComplete =
-    selectedPlayers[team1.name]?.length >= 11 &&
-    selectedPlayers[team2.name]?.length >= 11;
+    selectedPlayers[team1.teamId]?.length === 11 &&
+    selectedPlayers[team2.teamId]?.length === 11;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(`/api/matches/${matchId}`, {
+      console.log("Submitting:", {
+        matchId,
+        tossWinner,
+        tossSelection: decision,
+        squads: selectedPlayers // only player IDs are sent
+      });
+
+      const response = await fetch(`http://localhost:5000/api/matches/${matchId}/playingSquad`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          matchId,
           tossWinner,
           tossSelection: decision,
           status: "live",
-          squads: selectedPlayers,
+          squads: selectedPlayers, // only player IDs are sent
         }),
       });
 
       if (!response.ok) throw new Error("Failed to submit toss result");
-
       navigate(`/matches/${matchId}/score`);
     } catch (error) {
       console.error(error);
@@ -142,12 +186,14 @@ const StartMatch = ({ teams = {}, matchId }) => {
           </div>
 
           <div className="form-section team-selection">
-            <label><i className="fas fa-trophy"></i> Select Toss Winner</label>
+            <label>
+              <i className="fas fa-trophy"></i> Select Toss Winner
+            </label>
             <div className="custom-select">
               <select value={tossWinner} onChange={(e) => setTossWinner(e.target.value)} required>
                 <option value="">-- Select Team --</option>
-                <option value={team1.name}>{team1.name}</option>
-                <option value={team2.name}>{team2.name}</option>
+                <option value={team1.teamId}>{team1.name}</option>
+                <option value={team2.teamId}>{team2.name}</option>
               </select>
               <span className="select-arrow"></span>
             </div>
@@ -155,7 +201,9 @@ const StartMatch = ({ teams = {}, matchId }) => {
 
           {tossWinner && (
             <div className="form-section decision-selection">
-              <label><i className="fas fa-flag"></i> Decision After Winning</label>
+              <label>
+                <i className="fas fa-flag"></i> Decision After Winning
+              </label>
               <div className="radio-group">
                 {["bat", "bowl"].map((opt) => (
                   <label key={opt} className={decision === opt ? "active" : ""}>
@@ -187,21 +235,25 @@ const StartMatch = ({ teams = {}, matchId }) => {
 
           <div className="teams-container">
             {[team1, team2].map((team) => (
-              <div className="team" key={team.name}>
+              <div className="team" key={team.teamId}>
                 <img
-                  src={`/Images/${team.name.replace(/\s+/g, "")}.png`}
+                  src={"/Images/Team1.png"}
                   alt={team.name}
                   className="team-logo"
+                  onError={(e) => (e.target.src ="/Images/Team1.png")}
                 />
                 <h3 className="team-name">{team.name}</h3>
+                {/* Pass the full team object to open the popup */}
                 <button
                   type="button"
-                  onClick={() => openSquadPopup(team.name)}
+                  onClick={() => openSquadPopup(team)}
                   className="choose-squad-btn"
                 >
                   Choose Squad
                 </button>
-                <p className="squad-count">{selectedPlayers[team.name]?.length} / 11 selected</p>
+                <p className="squad-count">
+                  {selectedPlayers[team.teamId]?.length || 0} / 11 selected
+                </p>
               </div>
             ))}
             <span className="vs-text">VS</span>
@@ -210,37 +262,45 @@ const StartMatch = ({ teams = {}, matchId }) => {
           {showSquadPopup && (
             <div className="popup-overlay">
               <div className="popup-content">
-                <h3>Select Players for {showSquadPopup}</h3>
-                <ul>
-                  {(showSquadPopup === team1.name ? team1.players : team2.players).map((player, index) => {
-                    const key = player?.playerId || player?.name || index;
-                    const name = player?.name || `Player ${index + 1}`;
-                    return (
-                      <li key={key}>
-                        <span>{name}</span>
-                        <button
-                          type="button"
-                          onClick={() => toggleSelectPlayer(key)}
-                          style={{
-                            backgroundColor: selectedPlayers[showSquadPopup]?.includes(key) ? "#ffcc00" : "#333",
-                            color: selectedPlayers[showSquadPopup]?.includes(key) ? "#121212" : "#ffcc00",
-                          }}
-                        >
-                          {selectedPlayers[showSquadPopup]?.includes(key) ? "Selected" : "Select"}
-                        </button>
-                      </li>
-                    );
-                  })}
+                <div className="popup-header">
+                  <h3>Select 11 Players for {showSquadPopup.name}</h3>
+                  <p className="selection-count">
+                    Selected: {selectedPlayers[showSquadPopup.teamId]?.length || 0}/11
+                  </p>
+                </div>
+                <ul className="player-list">
+                  {(showSquadPopup.players || [])
+                    .filter((player) => player)
+                    .map((player) => {
+                      const isSelected = selectedPlayers[showSquadPopup.teamId]?.includes(player.playerId);
+                      return (
+                        <li key={player.playerId} className={isSelected ? "selected-player" : ""}>
+                          <div className="player-info">
+                            <span className="player-id">ID: {player.playerId}</span>
+                            <span className="player-name">{player.name}</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => toggleSelectPlayer(player.playerId)}
+                            className={`select-btn ${isSelected ? "selected" : ""}`}
+                          >
+                            {isSelected ? "✓ Selected" : "Select"}
+                          </button>
+                        </li>
+                      );
+                    })}
                 </ul>
-                <button type="button" onClick={closeSquadPopup} className="close-popup">
-                  Close
-                </button>
+                <div className="popup-actions">
+                  <button type="button" onClick={closeSquadPopup} className="confirm-btn">
+                    {selectedPlayers[showSquadPopup.teamId]?.length === 11 ? "Confirm" : "Close"}
+                  </button>
+                </div>
               </div>
             </div>
           )}
 
           {!isSquadComplete && (
-            <p className="squad-warning">Please select at least 11 players for each squad.</p>
+            <p className="squad-warning">Please select exactly 11 players for each team.</p>
           )}
         </div>
       </div>
@@ -248,7 +308,12 @@ const StartMatch = ({ teams = {}, matchId }) => {
       <button
         type="submit"
         className="combined-submit-btn"
-        disabled={!tossWinner || !decision || !isSquadComplete}
+        disabled={
+          !tossWinner ||
+          !decision ||
+          selectedPlayers[team1.teamId]?.length !== 11 ||
+          selectedPlayers[team2.teamId]?.length !== 11
+        }
       >
         <i className="fas fa-paper-plane"></i> Submit
       </button>
