@@ -21,15 +21,15 @@ const Match = () => {
   const Navigate = useNavigate();
   const { playerId } = usePlayer();
   const [showTossModal, setShowTossModal] = useState(false);
-  const [scoreCardData, setScoreCardData] = useState({
+  const [innings, setInnings] = useState({ 
     inning1: { batting: [], bowling: [], partnership: "0(0)" },
-    inning2: { batting: [], bowling: [], partnership: "0(0)" }
-  });
+    inning2: { batting: [], bowling: [], partnership: "0(0)" } });
   const [currentInning, setCurrentInning] = useState(1);
   const [teamsData, setTeamsData] = useState({
     team1: { teamId:null, name: "", players: [] },
     team2: { teamId:null, name: "", players: [] }
   });
+  const currentInningData = innings[`inning${currentInning}`] || { batting: [], bowling: [], partnership: "0(0)" };
   socket.on("inningOverEventClient",(data)=>{
       setCurrentInning((currentInning)=>currentInning+1)
   })
@@ -38,7 +38,7 @@ const Match = () => {
   const getInningTeams = (data, inning) => {
     const team1 = data.teams.team1;
     const team2 = data.teams.team2;
-    const tossSelection = data.tossSelection.toLowerCase();
+    const tossSelection = data?.tossSelection?.toLowerCase() || "";
     const tossWinner = data.tossWinner; // team id
     let battingTeam, bowlingTeam;
 
@@ -68,12 +68,16 @@ const Match = () => {
         console.log(data);
         // Determine current inning from match status (or set manually).
         // Here we assume matchData.status has some info to determine that.
-        const inning = data.secondInningOver > 0 || data.status === "completed" ? 2 : 1;
-        setCurrentInning(inning);
+        //const inning = data.secondInningOver > 0 || data.status === "completed" ? 2 : 1;
+        //setCurrentInning(inning);
+        setInnings({
+          inning1: data.inning1,
+          inning2: data.inning2 || { batting: [], bowling: [], partnership: "0(0)" }
+        });
 
 
         // Determine inning 1 teams for the initial scoreboard.
-        const { battingTeam, bowlingTeam } = getInningTeams(data,inning);
+        const { battingTeam, bowlingTeam } = getInningTeams(data,currentInning);
 
         // Create teams array using inning 1 scores.
         const teamsScoreData = [
@@ -169,14 +173,22 @@ const Match = () => {
       // (e.g., when first inning is complete, update currentInning to 2).
       // For the purpose of this demo, let's assume we update currentInning when firstInningScore stops updating.
       console.log(updatedData);
-      if (updatedData.firstInningScore !== matchData?.teams[0].runs &&
-          updatedData.secondInningScore === 0) {
-        // Still inning 1.
-        setCurrentInning(1);
-      } else if (updatedData.firstInningScore > 0 && updatedData.secondInningScore >= 0) {
-        // Assume that once second inning starts, currentInning becomes 2.
-        setCurrentInning(2);
-      }
+      if (updatedData.inning1) setInnings(i => ({ ...i, inning1: updatedData.inning1 }));
+      if (updatedData.inning2) setInnings(i => ({ ...i, inning2: updatedData.inning2 }));
+
+      // Determine current inning
+      // setCurrentInning(prev => {
+      //   if (updatedData.firstInningScore !== matchData?.teams[0].runs && updatedData.secondInningScore === 0) return 1;
+      //   return 2;
+      // });
+      // if (updatedData.firstInningScore !== matchData?.teams[0].runs &&
+      //     updatedData.secondInningScore === 0) {
+      //   // Still inning 1.
+      //   setCurrentInning(1);
+      // } else if (updatedData.firstInningScore > 0 && updatedData.secondInningScore >= 0) {
+      //   // Assume that once second inning starts, currentInning becomes 2.
+      //   setCurrentInning(2);
+      // }
 
       // Re-determine the teams based on current inning using the stored toss details.
       const dataForRoles = {
@@ -287,11 +299,11 @@ const Match = () => {
   if (error) return <div className="error">Error: {error}</div>;
   if (!matchData) return <div className="error">No match data found</div>;
 
-  const { formattedDate, formattedTime, formattedDay } = {
-    formattedDate: currentTime.toISOString().split("T")[0],
-    formattedTime: currentTime.toLocaleTimeString(),
-    formattedDay: currentTime.toLocaleDateString("en-US", { weekday: "long" })
-  };
+  // const { formattedDate, formattedTime, formattedDay } = {
+  //   formattedDate: currentTime.toISOString().split("T")[0],
+  //   formattedTime: currentTime.toLocaleTimeString(),
+  //   formattedDay: currentTime.toLocaleDateString("en-US", { weekday: "long" })
+  // };
 
   return (
     <div className="match-container">
@@ -328,7 +340,7 @@ const Match = () => {
                     ×
                   </button>
                   <StartMatch 
-                    teams={teamsData}
+                    teams={matchData.teamsRaw}
                     matchId={matchId}
                   />
                 </div>
@@ -372,9 +384,9 @@ const Match = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {(matchData.inning1?.batting || []).map((batter, i) => (
+                    {(currentInningData.batting || []).map((batter, i) => (
                       <tr key={i}>
-                        <td>{batter.playerName}{batter.onStrike && "*"}</td>
+                        <td>{batter.batsmanName}{batter.onStrike && "*"}</td>
                         <td>{batter.runs}</td>
                         <td>{batter.ballsFaced}</td>
                         <td>{batter.fours}</td>
@@ -391,14 +403,14 @@ const Match = () => {
                     <tr><th>Bowler</th><th>O</th><th>M</th><th>R</th><th>W</th><th>Eco</th></tr>
                   </thead>
                   <tbody>
-                    {(matchData.inning1?.bowling || []).map((bowler, i) => (
+                    {(currentInningData.bowling || []).map((bowler, i) => (
                       <tr key={i}>
-                        <td>{bowler.playerName}</td>
-                        <td>{bowler.oversBowled}</td>
-                        <td>{bowler.maidens}</td>
-                        <td>{bowler.runsConceded}</td>
+                        <td>{bowler.bowlerName}</td>
+                        <td>{bowler.overs}</td>
+                        <td>{bowler.maidenOvers}</td>
+                        <td>{bowler.runsGiven}</td>
                         <td>{bowler.wickets}</td>
-                        <td>{calculateEconomy(bowler.runsConceded, bowler.oversBowled)}</td>
+                        <td>{calculateEconomy(bowler.runsGiven, bowler.overs)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -411,7 +423,23 @@ const Match = () => {
               </div>
             )}
 
-            {activeTab === "SCORECARD" && <ScoreCardTab matchData={scoreCardData} />}
+            {activeTab === "SCORECARD" && (() => {
+              const { battingTeam, bowlingTeam } = getInningTeams({
+                teams: matchData.teamsRaw,
+                tossSelection: matchData.tossSelection,
+                tossWinner: matchData.tossWinner
+              }, currentInning);
+
+              return (
+                <ScoreCardTab
+                  innings={innings}
+                  currentInning={currentInning}
+                  battingTeam={battingTeam}
+                  bowlingTeam={bowlingTeam}
+                />
+              );
+            })()}
+
             {activeTab === "TEAMS" && <TeamsTab teams={matchData.teamsRaw} />}
             {/* Add other tabs as needed */}
           </div>
