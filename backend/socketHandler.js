@@ -1,7 +1,7 @@
 import { insertBallEvent } from "./controller/ballEventC.js";
 import { getMatchDataForBroadcast } from "./controller/matchC.js";
-import { insertOrUpdateBattingInningsStats } from "./models/battingInningsStats.js";
-import { insertOrUpdateBowlingInningsStats } from "./models/bowlingInningsStats.js";
+import { insertBattingInningsStats } from "./models/battingInningsStats.js";
+import { insertBowlingInningsStats } from "./models/bowlingInningsStats.js";
 // socketHandler.js
 const socketHandler = (io) => {
   const connectedUsers = {};
@@ -57,72 +57,40 @@ const socketHandler = (io) => {
         });
       }
     });
-    socket.on("battingStats", async (payload) => {
+    socket.on("battingStats", async (dataObject) => {
       try {
-        const result = await insertOrUpdateBattingInningsStats({
-          matchId: payload.matchId,
-          inningNumber: payload.inningNumber,
-          batsmanId: payload.batsmanId,
-          teamId: payload.teamId,
-          battingPosition: payload.battingPosition,
-          // Add default values or expand payload if needed:
-          runs: payload.runs || 0,
-          ballsFaced: payload.ballsFaced || 0,
-          fours: payload.fours || 0,
-          sixes: payload.sixes || 0,
-          outStatus: payload.outStatus || "Not Out",
-          outBowlerId: payload.outBowlerId || null,
-          outFielderId: payload.outFielderId || null,
-        });
-        console.log("Batting stats inserted/updated successfully:", result);
-        // Optionally emit a success event to the client:
-        //socket.emit("battingStatsUpdated", result);
-      } catch (err) {
-        console.error("Error in inserting/updating batting stats:", err);
-        socket.emit("error", { message: err.message });
-      }
-    });  
-    socket.on("bowlingStats",async (payload)=>{
-      try {
-       
-        const {matchId,inningNumber,bowlerId,teamId,bowlingPosition} = payload;
-  
-        // Here we're assuming that when the bowler is changed,
-        // the stats for this delivery (or over) are recorded.
-        // If these statistics aren't part of the payload, defaults (zero) will be applied.
-        const overs = payload.overs || 0;
-        const runsGiven = payload.runsGiven || 0;
-        const wickets = payload.wickets || 0;
-        const maidenOvers = payload.maidenOvers || 0;
-        const noBall = payload.noBall || 0;
-        const wideBall = payload.wideBall || 0;
-  
-        // Call the database insert/update function with the relevant data.
-        const result = await insertOrUpdateBowlingInningsStats({
-          matchId,
-          inningNumber,
-          bowlerId,
-          teamId,
-          bowlingPosition,
-          overs,
-          runsGiven,
-          wickets,
-          maidenOvers,
-          noBall,
-          wideBall
-        });
-  
-        console.log("Successfully inserted/updated bowling stats:", result);
-        // Optionally, emit back an acknowledgment or updated data
-        socket.to(matchId).emit("bowlingStatsClient", data);
-      } catch (err) {
-        console.error("Error inserting/updating bowling stats:", err);
-        socket.emit("error", { message: err.message });
-      }
-
+        const insertedStats = await insertBattingInningsStats({
+            matchId: dataObject.matchId,
+            batsmanId: dataObject.batsmanId,
+            inningNumber: dataObject.inningNumber,
+            battingPosition: dataObject.battingPosition
+          });
+          
+          console.log("Inserted batting stats:", insertedStats);
+          socket.to(dataObject.matchId).emit("battingStatsClient", insertedStats);
+        } catch (error) {
+            console.error("Error inserting batting stats:", error);
+        }
+        
+      });  
+      socket.on("bowlingStats",async (dataObject)=>{
+        try {
+          const insertedStats = await insertBowlingInningsStats({
+            matchId: dataObject.matchId,
+            bowlerId: dataObject.bowlerId,
+            inningNumber: dataObject.inningNumber,
+            bowlingPosition: dataObject.bowlingPosition
+          });
+          
+          console.log("Inserted bowling stats:", insertedStats);
+          socket.to(dataObject.matchId).emit("bowlingStatsClient", insertedStats);
+        } catch (error) {
+          console.error("Error inserting bowling stats:", error);
+        }
+        
       // Broadcast to the room (except sender) using socket.to
       
-    })
+    });
     socket.on("inningOverEvent",(data)=>{
       const { matchId } = data;
 
