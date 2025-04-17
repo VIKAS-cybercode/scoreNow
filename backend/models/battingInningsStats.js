@@ -8,7 +8,6 @@ const createBattingInningsPlayerStats = async () => {
             "inningNumber" INT CHECK ("inningNumber" IN (1, 2)) NOT NULL,
             "batsmanId" INT REFERENCES "players"("playerId") ON DELETE SET NULL,
             "battingPosition" INT CHECK ("battingPosition" > 0),
-            "teamId" INT REFERENCES "teams"("teamId") ON DELETE CASCADE NOT NULL,
             "runs" INT DEFAULT 0 CHECK ("runs" >= 0),
             "ballsFaced" INT DEFAULT 0 CHECK ("ballsFaced" >= 0),
             "fours" INT DEFAULT 0 CHECK ("fours" >= 0),
@@ -28,50 +27,49 @@ const createBattingInningsPlayerStats = async () => {
     }
 };
 
-const insertOrUpdateBattingInningsStats = async ({ matchId, inningNumber, batsmanId, teamId, battingPosition, runs = 0, ballsFaced = 0, fours = 0, sixes = 0, outStatus = 'Not Out', outBowlerId = null, outFielderId = null }) => {
+const insertBattingInningsStats = async ({ matchId, batsmanId, inningNumber, battingPosition }) => {
     const query = `
-        INSERT INTO "BattingInningsPlayerStats" ("matchId", "inningNumber", "batsmanId", "teamId", "battingPosition", "runs", "ballsFaced", "fours", "sixes", "outStatus", "outBowlerId", "outFielderId")
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-        ON CONFLICT ("matchId", "inningNumber", "batsmanId")
-        DO UPDATE SET
-            "battingPosition" = EXCLUDED."battingPosition",
-            "runs" = "BattingInningsPlayerStats"."runs" + EXCLUDED."runs",
-            "ballsFaced" = "BattingInningsPlayerStats"."ballsFaced" + EXCLUDED."ballsFaced",
-            "fours" = "BattingInningsPlayerStats"."fours" + EXCLUDED."fours",
-            "sixes" = "BattingInningsPlayerStats"."sixes" + EXCLUDED."sixes",
-            "outStatus" = EXCLUDED."outStatus",
-            "outBowlerId" = COALESCE(EXCLUDED."outBowlerId", "BattingInningsPlayerStats"."outBowlerId"),
-            "outFielderId" = COALESCE(EXCLUDED."outFielderId", "BattingInningsPlayerStats"."outFielderId")
+        INSERT INTO "battingInningsPlayerStats" (
+            "matchId", 
+            "batsmanId", 
+            "inningNumber", 
+            "battingPosition"
+        )
+        VALUES ($1, $2, $3, $4)
+        ON CONFLICT ("matchId", "batsmanId", "inningNumber")
+        DO UPDATE SET "battingPosition" = EXCLUDED."battingPosition"
         RETURNING *;
     `;
 
     try {
-        const result = await pool.query(query, [matchId, inningNumber, batsmanId, teamId, battingPosition, runs, ballsFaced, fours, sixes, outStatus, outBowlerId, outFielderId]);
+        const result = await pool.query(query, [matchId, batsmanId, inningNumber, battingPosition]);
         return result.rows[0];
     } catch (err) {
-        console.error("Error in insertOrUpdateBattingStats:", err);
+        console.error("Error in insertBattingInningsStats:", err);
         throw err;
     }
 };
 
-const getBattingInningsStats = async (matchId, inningNumber) => {
-    const query = `
-        SELECT "batsmanId", "teamId", "battingPosition", "runs", "ballsFaced", "fours", "sixes", "outStatus", "outBowlerId", "outFielderId"
-        FROM "BattingInningsPlayerStats"
-        WHERE "matchId" = $1 AND "inningNumber" = $2
-        ORDER BY "battingPosition" ASC;
-    `;
 
-    try {
-        const result = await pool.query(query, [matchId, inningNumber]);
-        return result.rows;
-    } catch (err) {
-        console.error("Error fetching batting stats:", err);
-        return [];
-    }
-};
 
-export { createBattingInningsPlayerStats, insertOrUpdateBattingInningsStats, getBattingInningsStats };
+// const getBattingInningsStats = async (matchId, inningNumber) => {
+//     const query = `
+//         SELECT "batsmanId", "teamId", "battingPosition", "runs", "ballsFaced", "fours", "sixes", "outStatus", "outBowlerId", "outFielderId"
+//         FROM "BattingInningsPlayerStats"
+//         WHERE "matchId" = $1 AND "inningNumber" = $2
+//         ORDER BY "battingPosition" ASC;
+//     `;
+
+//     try {
+//         const result = await pool.query(query, [matchId, inningNumber]);
+//         return result.rows;
+//     } catch (err) {
+//         console.error("Error fetching batting stats:", err);
+//         return [];
+//     }
+// };
+
+export { createBattingInningsPlayerStats, insertBattingInningsStats };
 
 
 // **Socket.IO Connection**
