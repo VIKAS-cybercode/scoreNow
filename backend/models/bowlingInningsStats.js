@@ -8,7 +8,6 @@ const createBowlingInningsPlayerStats = async () => {
             "inningNumber" INT CHECK ("inningNumber" IN (1, 2)) NOT NULL,
             "bowlerId" INT REFERENCES "players"("playerId") ON DELETE SET NULL,
             "bowlingPosition" INT CHECK ("bowlingPosition" > 0),
-            "teamId" INT REFERENCES "teams"("teamId") ON DELETE CASCADE NOT NULL,
             "overs" DECIMAL(4, 2) DEFAULT 0 CHECK ("overs" >= 0),
             "runsGiven" INT DEFAULT 0 CHECK ("runsGiven" >= 0),
             "wickets" INT DEFAULT 0 CHECK ("wickets" >= 0),
@@ -27,46 +26,46 @@ const createBowlingInningsPlayerStats = async () => {
     }
 };
 
-const insertOrUpdateBowlingInningsStats = async ({ matchId, inningNumber, bowlerId, teamId, bowlingPosition, overs = 0, runsGiven = 0, wickets = 0, maidenOvers = 0, noBall = 0, wideBall = 0 }) => {
+const insertBowlingInningsStats = async ({ matchId, bowlerId, inningNumber, bowlingPosition }) => {
     const query = `
-        INSERT INTO "BowlingInningsPlayerStats" ("matchId", "inningNumber", "bowlerId", "teamId", "bowlingPosition", "overs", "runsGiven", "wickets", "maidenOvers", "noBall", "wideBall")
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-        ON CONFLICT ("matchId", "inningNumber", "bowlerId")
-        DO UPDATE SET
-            "bowlingPosition" = EXCLUDED."bowlingPosition",
-            "overs" = "BowlingInningsPlayerStats"."overs" + EXCLUDED."overs",
-            "runsGiven" = "BowlingInningsPlayerStats"."runsGiven" + EXCLUDED."runsGiven",
-            "wickets" = "BowlingInningsPlayerStats"."wickets" + EXCLUDED."wickets",
-            "maidenOvers" = "BowlingInningsPlayerStats"."maidenOvers" + EXCLUDED."maidenOvers",
-            "noBall" = "BowlingInningsPlayerStats"."noBall" + EXCLUDED."noBall",
-            "wideBall" = "BowlingInningsPlayerStats"."wideBall" + EXCLUDED."wideBall"
+        INSERT INTO "bowlingInningsPlayerStats" (
+            "matchId", 
+            "bowlerId", 
+            "inningNumber", 
+            "bowlingPosition"
+        )
+        VALUES ($1, $2, $3, $4)
+        ON CONFLICT ("matchId", "bowlerId", "inningNumber")
+        DO UPDATE SET "bowlingPosition" = EXCLUDED."bowlingPosition"
         RETURNING *;
     `;
 
     try {
-        const result = await pool.query(query, [matchId, inningNumber, bowlerId, teamId, bowlingPosition, overs, runsGiven, wickets, maidenOvers, noBall, wideBall]);
+        const result = await pool.query(query, [matchId, bowlerId, inningNumber, bowlingPosition]);
         return result.rows[0];
     } catch (err) {
-        console.error("Error in insertOrUpdateBowlingStats:", err);
+        console.error("Error in insertBowlingInningsStats:", err);
         throw err;
     }
 };
 
-const getBowlingInningsStats = async (matchId, inningNumber) => {
-    const query = `
-        SELECT "bowlerId", "teamId", "bowlingPosition", "overs", "runsGiven", "wickets", "maidenOvers", "noBall", "wideBall"
-        FROM "BowlingInningsPlayerStats"
-        WHERE "matchId" = $1 AND "inningNumber" = $2
-        ORDER BY "bowlingPosition" ASC;
-    `;
 
-    try {
-        const result = await pool.query(query, [matchId, inningNumber]);
-        return result.rows;
-    } catch (err) {
-        console.error("Error fetching bowling stats:", err);
-        return [];
-    }
-};
 
-export { createBowlingInningsPlayerStats, insertOrUpdateBowlingInningsStats, getBowlingInningsStats };
+// const getBowlingInningsStats = async (matchId, inningNumber) => {
+//     const query = `
+//         SELECT "bowlerId", "teamId", "bowlingPosition", "overs", "runsGiven", "wickets", "maidenOvers", "noBall", "wideBall"
+//         FROM "BowlingInningsPlayerStats"
+//         WHERE "matchId" = $1 AND "inningNumber" = $2
+//         ORDER BY "bowlingPosition" ASC;
+//     `;
+
+//     try {
+//         const result = await pool.query(query, [matchId, inningNumber]);
+//         return result.rows;
+//     } catch (err) {
+//         console.error("Error fetching bowling stats:", err);
+//         return [];
+//     }
+// };
+
+export { createBowlingInningsPlayerStats, insertBowlingInningsStats };
