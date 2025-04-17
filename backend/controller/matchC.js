@@ -302,126 +302,133 @@ const getAllMatches = async (req, res) => {
 //     }
 // };
 
-const getMatchById = async (req, res) => {
-    const { matchId } = req.params;
+// This function only fetches data from the database.
+const fetchMatchById = async (matchId) => {
+  // Get base match details
+  const matchQuery = `SELECT * FROM "matches" WHERE "matchId" = $1;`;
+  const matchResult = await pool.query(matchQuery, [matchId]);
 
-    try {
-        console.log("match with id")
-        // Get base match details
-        const matchQuery = `SELECT * FROM "matches" WHERE "matchId" = $1;`;
-        const matchResult = await pool.query(matchQuery, [matchId]);
+  if (matchResult.rows.length === 0) {
+    throw new Error("Match not found");
+  }
 
-        if (matchResult.rows.length === 0) {
-            return res.status(404).json({ error: "Match not found" });
-        }
+  const match = matchResult.rows[0];
+  const { team1Id, team2Id } = match;
 
-        const match = matchResult.rows[0];
-        const { team1Id, team2Id } = match;
+  // Get all related data in parallel with player names and team names
+  const [battingStats, bowlingStats, team1Data, team2Data] = await Promise.all([
+    // Batting stats with player names
+    pool.query(`
+      SELECT b.*, p."name" as "batsmanName"
+      FROM "battingInningsPlayerStats" b
+      JOIN "players" p ON b."batsmanId" = p."playerId"
+      WHERE b."matchId" = $1
+      ORDER BY b."inningNumber", b."battingPosition"
+    `, [matchId]),
 
-        // Get all related data in parallel with player names and team names
-        const [
-            battingStats,
-            bowlingStats,
-            team1Data,
-            team2Data
-        ] = await Promise.all([
-            // Batting stats with player names
-            pool.query(`
-                SELECT b.*, p."name" as "batsmanName"
-                FROM "battingInningsPlayerStats" b
-                JOIN "players" p ON b."batsmanId" = p."playerId"
-                WHERE b."matchId" = $1
-                ORDER BY b."inningNumber", b."battingPosition"
-            `, [matchId]),
-            
-            // Bowling stats with player names
-            pool.query(`
-                SELECT bw.*, p."name" as "bowlerName"
-                FROM "bowlingInningsPlayerStats" bw
-                JOIN "players" p ON bw."bowlerId" = p."playerId"
-                WHERE bw."matchId" = $1
-                ORDER BY bw."inningNumber", bw."bowlingPosition"
-            `, [matchId]),
-            
-            // Team 1 data with players and team name
-            pool.query(`
-                SELECT 
-                    p."playerId", 
-                    p."name", 
-                    p."profilePicture",
-                    t."name" as "teamName"
-                FROM "teamRPlayer" trp
-                JOIN "players" p ON trp."playerId" = p."playerId"
-                JOIN "teams" t ON trp."teamId" = t."teamId"
-                WHERE trp."teamId" = $1
-            `, [team1Id]),
-            
-            // Team 2 data with players and team name
-            pool.query(`
-                SELECT 
-                    p."playerId", 
-                    p."name", 
-                    p."profilePicture",
-                    t."name" as "teamName"
-                FROM "teamRPlayer" trp
-                JOIN "players" p ON trp."playerId" = p."playerId"
-                JOIN "teams" t ON trp."teamId" = t."teamId"
-                WHERE trp."teamId" = $1
-            `, [team2Id])
-        ]);
+    // Bowling stats with player names
+    pool.query(`
+      SELECT bw.*, p."name" as "bowlerName"
+      FROM "bowlingInningsPlayerStats" bw
+      JOIN "players" p ON bw."bowlerId" = p."playerId"
+      WHERE bw."matchId" = $1
+      ORDER BY bw."inningNumber", bw."bowlingPosition"
+    `, [matchId]),
 
-        // Process into innings structure
-        const processStats = (stats, inning) => 
-            stats.rows.filter(row => row.inningnumber === inning);
+    // Team 1 data with players and team name
+    pool.query(`
+      SELECT 
+        p."playerId", 
+        p."name", 
+        p."profilePicture",
+        t."name" as "teamName"
+      FROM "teamRPlayer" trp
+      JOIN "players" p ON trp."playerId" = p."playerId"
+      JOIN "teams" t ON trp."teamId" = t."teamId"
+      WHERE trp."teamId" = $1
+    `, [team1Id]),
 
-        const response = {
-            ...match,
-            teams: {
-                team1: {
-                    teamId: team1Id,
-                    name: team1Data.rows[0]?.teamName || 'Team 1', // Fallback name
-                    players: team1Data.rows.map(p => ({
-                        playerId: p.playerId,
-                        name: p.name,
-                        profilePicture: p.profilePicture
-                    }))
-                },
-                team2: {
-                    teamId: team2Id,
-                    name: team2Data.rows[0]?.teamName || 'Team 2', // Fallback name
-                    players: team2Data.rows.map(p => ({
-                        playerId: p.playerId,
-                        name: p.name,
-                        profilePicture: p.profilePicture
-                    }))
-                }
-            },
-            inning1: {
-                batting: processStats(battingStats, 1),
-                bowling: processStats(bowlingStats, 1)
-            },
-            inning2: {
-                batting: processStats(battingStats, 2),
-                bowling: processStats(bowlingStats, 2)
-            }
-        };
-        console.log(response)
-        res.status(200).json(response);
-    } catch (err) {
-        console.error("Error retrieving match details:", err);
-        res.status(500).json({ error: "Internal Server Error" });
+    // Team 2 data with players and team name
+    pool.query(`
+      SELECT 
+        p."playerId", 
+        p."name", 
+        p."profilePicture",
+        t."name" as "teamName"
+      FROM "teamRPlayer" trp
+      JOIN "players" p ON trp."playerId" = p."playerId"
+      JOIN "teams" t ON trp."teamId" = t."teamId"
+      WHERE trp."teamId" = $1
+    `, [team2Id])
+  ]);
+
+  // Helper function to filter stats by inning
+  const processStats = (stats, inning) =>
+    stats.rows.filter(row => row.inningNumber === inning);
+
+  const response = {
+    ...match,
+    teams: {
+      team1: {
+        teamId: team1Id,
+        name: team1Data.rows[0]?.teamName || 'Team 1',
+        players: team1Data.rows.map(p => ({
+          playerId: p.playerId,
+          name: p.name,
+          profilePicture: p.profilePicture
+        }))
+      },
+      team2: {
+        teamId: team2Id,
+        name: team2Data.rows[0]?.teamName || 'Team 2',
+        players: team2Data.rows.map(p => ({
+          playerId: p.playerId,
+          name: p.name,
+          profilePicture: p.profilePicture
+        }))
+      }
+    },
+    inning1: {
+      batting: processStats(battingStats, 1),
+      bowling: processStats(bowlingStats, 1)
+    },
+    inning2: {
+      batting: processStats(battingStats, 2),
+      bowling: processStats(bowlingStats, 2)
     }
+  };
+
+  return response;
 };
 
-// For socket broadcasts (modified version without team players)
+// Express HTTP handler version
+const getMatchById = async (req, res) => {
+  const { matchId } = req.params;
+  try {
+    const matchData = await fetchMatchById(matchId);
+    res.status(200).json(matchData);
+  } catch (err) {
+    console.error("Error retrieving match details:", err);
+    if (err.message === "Match not found") {
+      res.status(404).json({ error: "Match not found" });
+    } else {
+      res.status(500).json({ error: "Internal Server Error" });
+    }
+  }
+};
+
+// Socket version
 const getMatchDataForBroadcast = async (matchId) => {
-    const data = await getMatchById({ params: { matchId } }, { sendResponse: false });
-    
-    // Remove team from response
+  try {
+    const data = await fetchMatchById(matchId);
+    // Remove team data from response if necessary
     delete data.teams.team1;
     delete data.teams.team2;
-    
     return data;
+  } catch (err) {
+    console.error("Error retrieving match details for broadcast:", err);
+    return { error: err.message };
+  }
 };
 
 const updateMatch = async (req, res) => {
@@ -511,9 +518,9 @@ const getMatchPlayingSquad = async (req, res) => {
             SELECT 
                 mrp."teamId", 
                 p."playerId", 
-                p."playerName", 
-                p."photo", 
-                t."teamName"
+                p."name" AS "playerName",  
+                p."profilePicture", 
+                t."name" AS "teamName"
             FROM "matchRPlayer" mrp
             JOIN "players" p ON mrp."playerId" = p."playerId"
             JOIN "teams" t ON mrp."teamId" = t."teamId"
@@ -540,7 +547,7 @@ const getMatchPlayingSquad = async (req, res) => {
             teams[player.teamId].players.push({
                 playerId: player.playerId,
                 playerName: player.playerName,
-                photo: player.photo
+                profilePicture: player.profilePicture
             });
         });
 
