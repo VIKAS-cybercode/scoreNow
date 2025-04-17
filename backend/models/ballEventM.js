@@ -17,13 +17,13 @@ const createBallEvent = async () => {
             "wicketType" VARCHAR(50) CHECK ("wicketType" IN 
                 ('Bowled', 'Caught', 'LBW', 'Run Out', 'Stumped', 'Hit Wicket', 'Handled the Ball', 'Obstructing the Field')) DEFAULT NULL,
             "outBatsmanId" INT REFERENCES "players"("playerId") ON DELETE SET NULL,
-            "boundaryType" VARCHAR(10) DEFAULT NULL,
+            "boundaryType" VARCHAR(10) CHECK ("boundaryType" IN ('Four', 'Six')) DEFAULT NULL,
             "fielderId" INT REFERENCES "players"("playerId") ON DELETE SET NULL,
             "extraRun" INT DEFAULT 0 CHECK ("extraRun" >= 0),
             "extraType" VARCHAR(20) CHECK ("extraType" IN ('Wide', 'No Ball', 'Bye', 'Leg Bye', 'Penalty')) DEFAULT NULL,
             "shotDirection" VARCHAR(50),
             "isStrikeRotated" BOOLEAN DEFAULT FALSE,
-            "timestamp" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            "ballTimestamp" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
     `;
     try {
@@ -34,16 +34,55 @@ const createBallEvent = async () => {
     }
 };
 
-const deleteTable = async () => {
-    const client = await pool.connect();
+// Insert Ball Event
+const insertBallEvent = async (ballEventData) => {
+    const fields = Object.keys(ballEventData).map(field => `"${field}"`);  
+    const values = Object.values(ballEventData);
+
+    if (fields.length === 0) throw new Error("No data provided");
+
+    const placeholders = fields.map((_, index) => `$${index + 1}`).join(", ");
+    const query = `
+        INSERT INTO "ballEvent" (${fields.join(", ")})
+        VALUES (${placeholders})
+        RETURNING *;
+    `;
+
     try {
-        await client.query(`DROP TABLE IF EXISTS "ballEvent" CASCADE;`);
-        console.log(`Table "ballEvent" deleted successfully.`);
-    } catch (error) {
-        console.error(`Error deleting table "ballEvent":`, error);
-    } finally {
-        client.release();
+        const result = await pool.query(query, values);
+        console.log("Ball event added:", result.rows[0]);
+        return result.rows[0];
+    } catch (err) {
+        console.error("Error inserting ball event:", err);
+        throw err;
     }
 };
 
-export { createBallEvent,deleteTable };
+// Update Ball Event
+const updateBallEvent = async (uniqueId, updates) => {
+    const fields = Object.keys(updates).map(field => `"${field}"`);
+    const values = Object.values(updates);
+
+    if (fields.length === 0) return;
+
+    const setClause = fields.map((field, index) => `${field} = $${index + 1}`).join(', ');
+    values.push(uniqueId);
+
+    const query = `
+        UPDATE "ballEvent" 
+        SET ${setClause} 
+        WHERE "uniqueId" = $${values.length} 
+        RETURNING *;
+    `;
+
+    try {
+        const result = await pool.query(query, values);
+        console.log("Ball event updated:", result.rows[0]);
+        return result.rows[0];
+    } catch (err) {
+        console.error("Error updating ball event:", err);
+        throw err;
+    }
+};
+
+export { createBallEvent, insertBallEvent, updateBallEvent };
