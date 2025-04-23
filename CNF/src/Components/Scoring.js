@@ -1,19 +1,80 @@
-import React, { useState, useEffect,useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { useParams } from "react-router-dom";
 import "./Scoring.css";
 import socket from "./socket";
 
 const Scoring = () => {
   // ----- Initial Data -----
-  // Define these refs at the top of your component
-   const outBatsmanRef = useRef(null);
-   const previousNonStrikerRef = useRef(null);
-   const stumpOutWide=useRef(0);
-   const preRunoutStrikerRef = useRef(null);
-   const preRunoutNonStrikerRef = useRef(null);
-  
-  const matchId = 123;
-  const [inningNumber,setInningNumber]=useState(0);
+  const outBatsmanRef = useRef(null);
+  const previousNonStrikerRef = useRef(null);
+  const stumpOutWide = useRef(0);
+  const preRunoutStrikerRef = useRef(null);
+  const preRunoutNonStrikerRef = useRef(null);
+
+  const { matchId } = useParams();
+  const [inningNumber, setInningNumber] = useState(1);
   const [targetScore, setTargetScore] = useState(null);
+  const [battingOrder, setBattingOrder] = useState([]);
+  const [bowlingOrder, setBowlingOrder] = useState([]);
+  const [winCondition, setWinCondition] = useState(null);
+
+  // ----- State Variables -----
+  const [runs, setRuns] = useState(0);
+  const [wickets, setWickets] = useState(0);
+  const [totalDeliveries, setTotalDeliveries] = useState(0);
+  const [currentOverDeliveries, setCurrentOverDeliveries] = useState(0);
+  const [totalOversLimit] = useState(10);
+  const [allBatsmen, setAllBatsmen] = useState([
+    { id: 1, name: "Batsman1", runs: 0, balls: 0 },
+    { id: 2, name: "Batsman2", runs: 0, balls: 0 },
+    { id: 3, name: "Batsman3", runs: 0, balls: 0 },
+    { id: 4, name: "Batsman4", runs: 0, balls: 0 },
+    { id: 5, name: "Batsman5", runs: 0, balls: 0 },
+    { id: 6, name: "Batsman6", runs: 0, balls: 0 },
+    { id: 7, name: "Batsman7", runs: 0, balls: 0 },
+    { id: 8, name: "Batsman8", runs: 0, balls: 0 },
+    { id: 9, name: "Batsman9", runs: 0, balls: 0 },
+    { id: 10, name: "Batsman10", runs: 0, balls: 0 },
+    { id: 11, name: "Batsman11", runs: 0, balls: 0 },
+  ]);
+  const [batsmen, setBatsmen] = useState([]);
+  const [outBatsmen, setOutBatsmen] = useState([]);
+  const [battingTeamId, setBattingTeamId] = useState(null);
+  const [bowlingTeamId, setBowlingTeamId] = useState(null);
+  const [battingTeamName, setBattingTeamName] = useState(null);
+  const [bowlingTeamName, setBowlingTeamName] = useState(null);
+  const [bowlers, setBowlers] = useState([
+    { id: 1, name: "Bowler1", deliveries: 0, runs: 0, wickets: 0 },
+    { id: 2, name: "Bowler2", deliveries: 0, runs: 0, wickets: 0 },
+  ]);
+  const [currentBowler, setCurrentBowler] = useState(0);
+  const [pendingBowlerChange, setPendingBowlerChange] = useState(false);
+  const [showBatsmanModal, setShowBatsmanModal] = useState(false);
+  const [showExtraModal, setShowExtraModal] = useState(false);
+  const [showNoBallTypeModal, setShowNoBallTypeModal] = useState(false);
+  const [showOutTypeModal, setShowOutTypeModal] = useState(false);
+  const [outType, setOutType] = useState("");
+  const [showRunOutSelectionModal, setShowRunOutSelectionModal] = useState(false);
+  const [runOutRuns, setRunOutRuns] = useState(0);
+  const [showInitialBatsmenModal, setShowInitialBatsmenModal] = useState(true);
+  const [showInitialBowlerModal, setShowInitialBowlerModal] = useState(false);
+  const [selectedInitialBatsmen, setSelectedInitialBatsmen] = useState([]);
+  const [extraType, setExtraType] = useState(null);
+  const [noBallType, setNoBallType] = useState(null);
+  const [lastScored, setLastScored] = useState("");
+  const [gameOver, setGameOver] = useState(false);
+  const [allOut, setAllOut] = useState(false);
+  const [boundaryType, setBoundaryType] = useState(null);
+  const [showRunOutTypeModal, setShowRunOutTypeModal] = useState(false);
+  const [showRunOutNoBallTypeModal, setShowRunOutNoBallTypeModal] = useState(false);
+  const [showStumpOutTypeModal, setShowStumpOutTypeModal] = useState(false);
+  const [currentOverEvents, setCurrentOverEvents] = useState([]);
+  const [ballEvent, setBallEvent] = useState(null);
+  const [initialPlayersSent, setInitialPlayersSent] = useState(false);
+  const [tossWinningTeamName, setTossWinningTeamName] = useState(null);
+  const sentRef = useRef(false);
+
+  // ----- useEffect Hooks -----
   useEffect(() => {
     if (matchId) {
       socket.emit("join-room", matchId);
@@ -23,70 +84,43 @@ const Scoring = () => {
       socket.emit("leave-room", matchId);
     };
   }, [matchId]);
-  
-  const allBatsmenList = [
-    { id:1, name: "Batsman1", runs: 0, balls: 0 },
-    { id:2, name: "Batsman2", runs: 0, balls: 0 },
-    { id:3, name: "Batsman3", runs: 0, balls: 0 },
-    { id:4, name: "Batsman4", runs: 0, balls: 0 },
-    { id:5, name: "Batsman5", runs: 0, balls: 0 },
-    { id:6, name: "Batsman6", runs: 0, balls: 0 },
-    { id:7, name: "Batsman7", runs: 0, balls: 0 },
-    { id:8, name: "Batsman8", runs: 0, balls: 0 },
-    { id:9, name: "Batsman9", runs: 0, balls: 0 },
-    { id:10, name: "Batsman10", runs: 0, balls: 0 },
-    { id:11, name: "Batsman11", runs: 0, balls: 0 },
-  ];
-  
 
-  // ----- State Variables -----
-  const [runs, setRuns] = useState(0);//total runs
-  const [wickets, setWickets] = useState(0);// total wickets
-  const [totalDeliveries, setTotalDeliveries] = useState(0);// balls till now
-  const [currentOverDeliveries, setCurrentOverDeliveries] = useState(0);// ball in current over
-  const [totalOversLimit] = useState(10);// totalOver
-  const [allBatsmen] = useState(allBatsmenList);// list of batsmen
-  const [batsmen, setBatsmen] = useState([]);// pair of striker and not striker batsmen
-  const [outBatsmen, setOutBatsmen] = useState([]);// list of batsmen who out
+  useEffect(() => {
+    if (inningNumber === 2 && gameOver && !sentRef.current) {
+      sentRef.current = true;
+      let winnerTeamId, winnerType;
+      if (winCondition === "target") {
+        winnerTeamId = battingTeamId;
+        winnerType = `${battingTeamName} wins by ${10 - wickets} wickets`;
+      } else {
+        if (runs >= targetScore) {
+          winnerTeamId = battingTeamId;
+          winnerType = `${battingTeamName} wins by ${10 - wickets} wickets`;
+        } else {
+          winnerTeamId = bowlingTeamId;
+          winnerType = `${bowlingTeamName} wins by ${targetScore - runs} runs`;
+        }
+      }
+      socket.emit("matchEnd", {
+        matchId,
+        winnerTeamId,
+        winnerType,
+      });
+    }
+  }, [
+    inningNumber,
+    gameOver,
+    winCondition,
+    runs,
+    wickets,
+    targetScore,
+    battingTeamName,
+    bowlingTeamName,
+    matchId,
+    battingTeamId,
+    bowlingTeamId,
+  ]);
 
-  const [bowlers, setBowlers] = useState([
-    { id:1,name: "Bowler1", deliveries: 0, runs: 0, wickets: 0 },
-    { id:2,name: "Bowler2", deliveries: 0, runs: 0, wickets: 0 },
-  ]);// list of bowlers
-  const [currentBowler, setCurrentBowler] = useState(0);// currentBowler
-  const [pendingBowlerChange, setPendingBowlerChange] = useState(false); // bowlerChangeBoolValue
-  const [showBatsmanModal, setShowBatsmanModal] = useState(false);
-  const [showStrikerModal, setShowStrikerModal] = useState(false);
-  const [showExtraModal, setShowExtraModal] = useState(false);
-  const [showNoBallTypeModal, setShowNoBallTypeModal] = useState(false);
-  const [showOutTypeModal, setShowOutTypeModal] = useState(false);
-  const [outType, setOutType] = useState("");// outType
-
-  const [showRunOutSelectionModal, setShowRunOutSelectionModal] = useState(false); 
-  const [dismissalWasRunOut, setDismissalWasRunOut] = useState(false);
-  const [runOutRuns, setRunOutRuns] = useState(0); //runOutRuns
-
-  const [showInitialBatsmenModal, setShowInitialBatsmenModal] = useState(true);
-  const [showInitialBowlerModal, setShowInitialBowlerModal] = useState(false);
-  const [selectedInitialBatsmen, setSelectedInitialBatsmen] = useState([]);// initial Batsmen
-
-  const [extraType, setExtraType] = useState(null);// extra type
-  const [noBallType, setNoBallType] = useState(null);//noballType
-  const [lastScored, setLastScored] = useState(""); // lastScoredRuns
-  const [gameOver, setGameOver] = useState(false); //gameover or not
-  const [allOut, setAllOut] = useState(false);// all out
-  const [boundaryType,setBoundaryType]=useState(null);
-  // New state for Run Out type check modal and No Ball sub-modals
-  const [showRunOutTypeModal, setShowRunOutTypeModal] = useState(false); 
-  const [showRunOutNoBallTypeModal, setShowRunOutNoBallTypeModal] = useState(false);
-  const [showStumpOutTypeModal, setShowStumpOutTypeModal] = useState(false);
-  
-  // For current over events display (ball by ball)
-  // e.g. ["1", "4", "WD", "OUT", ...]
-  const [currentOverEvents, setCurrentOverEvents] = useState([]); // CurrentOverEvents
-  const [ballEvent, setBallEvent] = useState(null);
-  const [initialPlayersSent, setInitialPlayersSent] = useState(false);
-  
   useEffect(() => {
     if (
       batsmen.length === 2 &&
@@ -95,97 +129,190 @@ const Scoring = () => {
       !showInitialBowlerModal &&
       !initialPlayersSent
     ) {
-      const payload = {
+      const payload1 = {
         matchId,
         inningNumber,
-        OverNumber: Math.floor(totalDeliveries / 6),
-        ballNumber: totalDeliveries % 6,
-        strikerId: batsmen[0]?.id,
-        nonStrikerId: batsmen[1]?.id,
-        bowlerId: bowlers[currentBowler]?.id,
-        runScored: 0,
-        isWicket: false,
-        wicketType: null,
-        newbatsmenid: null,
-        boundarytype: boundaryType,
-        extraRun: 0,
-        extratype: null,
-        currentStrikerid: batsmen[0]?.id,
-        currentnonstrikerid: batsmen[1]?.id,
-        totalRuns: runs,
-        Totaloverslimit: totalOversLimit,
-        noBalltype: null,
-        gameOver,
-        Allout: false
+        batsmanId: batsmen[0]?.id,
+        teamId: battingTeamId,
+        battingPosition: 1,
       };
-  
-      socket.emit("initialPlayersSelected", payload);
-      console.log("Sent initial players:", payload);
-      setInitialPlayersSent(true); // ✅ prevent future emits
-    }
-  }, [batsmen, currentBowler, showInitialBatsmenModal, showInitialBowlerModal, initialPlayersSent]);
-  
- // Replace your current gameOver useEffect with this:
-useEffect(() => {
-  if (gameOver) {
-    if (inningNumber === 0) {
-      // First innings ended: set target score (runs + 1) for the second innings.
-      setTargetScore(runs + 1);
-      // Optionally, you can delay resetting states until user action.
-    } else {
-      // Second innings: emit match over event
-      const payload = {
+      const payload2 = {
         matchId,
         inningNumber,
-        OverNumber: Math.floor(totalDeliveries / 6),
-        ballNumber: totalDeliveries % 6,
-        strikerId: batsmen[0]?.id,
-        nonStrikerId: batsmen[1]?.id,
-        bowlerId: bowlers[currentBowler]?.id,
-        runScored: 0,
-        isWicket: false,
-        wicketType: null,
-        newbatsmenid: null,
-        boundarytype: null,
-        extraRun: 0,
-        extratype: null,
-        currentStrikerid: batsmen[0]?.id,
-        currentnonstrikerid: batsmen[1]?.id,
-        totalRuns: runs,
-        Totaloverslimit: totalOversLimit,
-        noBalltype: null,
-        gameOver: true,
-        Allout: allOut
+        batsmanId: batsmen[1]?.id,
+        teamId: battingTeamId,
+        battingPosition: 2,
       };
-      socket.emit("gameOverEvent", payload);
-      console.log("Game Over Event Sent:", payload);
+      const payload3 = {
+        matchId,
+        inningNumber,
+        bowlerId: bowlers[currentBowler]?.id,
+        teamId: bowlingTeamId,
+        bowlingPosition: 1,
+      };
+      socket.emit("battingStats", payload1);
+      socket.emit("battingStats", payload2);
+      socket.emit("bowlingStats", payload3);
+      console.log("Sent initial players:", payload1, payload2, payload3);
+      setInitialPlayersSent(true);
     }
-  }
-}, [gameOver]);
+  }, [
+    batsmen,
+    currentBowler,
+    showInitialBatsmenModal,
+    showInitialBowlerModal,
+    initialPlayersSent,
+    matchId,
+    inningNumber,
+    battingTeamId,
+    bowlingTeamId,
+  ]);
 
-  
+  useEffect(() => {
+    if (ballEvent) {
+      console.log("Emitting ballEvent:", ballEvent); // Debug ballEvent
+      socket.emit("ballEvent", ballEvent);
+      setBallEvent(null);
+    }
+  }, [ballEvent]);
+
+  useEffect(() => {
+    if (gameOver || allOut) {
+      if (inningNumber === 1 && !targetScore) {
+        setTargetScore(runs + 1);
+      }
+      const completedOvers = Math.floor(totalDeliveries / 6);
+      const ballsInCurrentOver = totalDeliveries % 6;
+      const overNumberSent = ballsInCurrentOver === 0 ? completedOvers - 1 : completedOvers;
+      const ballNumberSent = ballsInCurrentOver === 0 ? 6 : ballsInCurrentOver;
+      const payload = {
+        matchId,
+        inningNumber,
+        overNumber: overNumberSent,
+        ballNumber: ballNumberSent,
+        strikerId: batsmen[0]?.id,
+        nonStrikerId: batsmen[1]?.id,
+        bowlerId: bowlers[currentBowler]?.id,
+        runScored: 0,
+        isWicket: false,
+        wicketType: null,
+        newBatsmenId: null,
+        boundaryType: null,
+        extraRun: 0,
+        extraType: null,
+        currentStrikerId: batsmen[0]?.id,
+        currentNonStrikerId: batsmen[1]?.id,
+        totalRuns: runs,
+        totalOversLimit,
+        noBallType: null,
+        gameOver: true,
+        allOut,
+      };
+      socket.emit("inningOverEvent", payload);
+      console.log("Inning Over Event Sent:", payload);
+      const payload2 = {
+        matchId,
+      };
+      if (inningNumber === 2) {
+        socket.emit("gameOver", payload2);
+      }
+    }
+  }, [
+    gameOver,
+    allOut,
+    matchId,
+    inningNumber,
+    totalDeliveries,
+    batsmen,
+    bowlers,
+    currentBowler,
+    runs,
+    totalOversLimit,
+    targetScore,
+  ]);
+
+  useEffect(() => {
+    const fetchPlayingSquad = async () => {
+      try {
+        const res = await fetch(`http://localhost:5000/api/matches/${matchId}/playingSquad`);
+        const data = await res.json();
+        console.log("Fetched data:", data);
+
+        const { team1, team2, tossWinner, tossSelection } = data;
+
+        let battingTeam, bowlingTeam;
+        const tossWinningTeam = tossWinner === team1.teamId ? team1 : team2;
+        const tossLosingTeam = tossWinner === team1.teamId ? team2 : team1;
+        setTossWinningTeamName(tossWinningTeam.teamName);
+        if (inningNumber === 1) {
+          if (tossSelection === "bat") {
+            battingTeam = tossWinningTeam;
+            bowlingTeam = tossLosingTeam;
+          } else {
+            battingTeam = tossLosingTeam;
+            bowlingTeam = tossWinningTeam;
+          }
+        } else {
+          if (tossSelection === "bat") {
+            battingTeam = tossLosingTeam;
+            bowlingTeam = tossWinningTeam;
+          } else {
+            battingTeam = tossWinningTeam;
+            bowlingTeam = tossLosingTeam;
+          }
+        }
+        setBattingTeamId(battingTeam.teamId);
+        setBowlingTeamId(bowlingTeam.teamId);
+        setBattingTeamName(battingTeam.teamName);
+        setBowlingTeamName(bowlingTeam.teamName);
+        const battingPlayers = battingTeam.players.map((p, idx) => ({
+          id: p.playerId,
+          name: p.playerName,
+          runs: 0,
+          balls: 0,
+          photo: p.photo,
+        }));
+
+        const bowlingPlayers = bowlingTeam.players.map((p, idx) => ({
+          id: p.playerId,
+          name: p.playerName,
+          deliveries: 0,
+          runs: 0,
+          wickets: 0,
+          photo: p.photo,
+        }));
+
+        setAllBatsmen(battingPlayers);
+        setBowlers(bowlingPlayers);
+      } catch (err) {
+        console.error("Error fetching match:", err);
+      }
+    };
+
+    fetchPlayingSquad();
+  }, [matchId, inningNumber]);
+
   // ----- Helper Functions -----
-  const isGameOver = (legalDeliveries) =>
-    legalDeliveries >= totalOversLimit * 6;
+  const isGameOver = (legalDeliveries, currentRuns) => {
+    if (inningNumber === 2 && targetScore && currentRuns >= targetScore) {
+      return true;
+    }
+    return legalDeliveries >= totalOversLimit * 6;
+  };
 
   const isTeamAllOut = () => {
-    // Use name comparison to check if a batsman is already in play or out.
     const availableBatsmen = allBatsmen.filter(
       (b) =>
-        !batsmen.some((bt) => bt && bt.name === b.name) &&
-        !outBatsmen.some((ob) => ob && ob.name === b.name)
+        !batsmen.some((bt) => bt && bt.id === b.id) &&
+        !outBatsmen.some((ob) => ob && ob.id === b.id)
     );
-    
-    
     return availableBatsmen.length === 0;
   };
 
-  // Resets current over events when an over is completed
   const resetCurrentOverEvents = () => {
     setCurrentOverEvents([]);
   };
 
-  // Add an event to the current over list; for any out, we simply show "OUT"
   const addCurrentOverEvent = (event) => {
     if (event.toLowerCase().includes("out")) {
       setCurrentOverEvents((prev) => [...prev, "OUT"]);
@@ -195,17 +322,13 @@ useEffect(() => {
   };
 
   // ----- Ball Handling -----
-
-  const handleRun = (run,bt=null) => {
-    // Inside handleRun(), after updating runs, add:
-if (inningNumber === 1 && (runs + run) >= targetScore) {
-  setGameOver(true);
-}
+  const handleRun = (run, bt = null) => {
     if (gameOver || allOut) return;
-  
+
     const newTotalDeliveries = totalDeliveries + 1;
     const newCurrentOverDeliveries = currentOverDeliveries + 1;
-  
+    const newRuns = runs + run;
+
     const striker = batsmen[0];
     const nonStriker = batsmen[1];
     let updatedBatsmen = batsmen.map((batsman, index) =>
@@ -213,17 +336,16 @@ if (inningNumber === 1 && (runs + run) >= targetScore) {
         ? { ...batsman, runs: batsman.runs + run, balls: batsman.balls + 1 }
         : batsman
     );
-  
-    // Determine if strike changes after run
+
     if (run % 2 === 1) {
       updatedBatsmen = [updatedBatsmen[1], updatedBatsmen[0]];
     }
-  
+
     const isOverCompleted = newCurrentOverDeliveries === 6;
     if (isOverCompleted) {
       updatedBatsmen = [updatedBatsmen[1], updatedBatsmen[0]];
     }
-  
+
     const newBowlers = bowlers.map((bowler, index) =>
       index === currentBowler
         ? {
@@ -233,62 +355,102 @@ if (inningNumber === 1 && (runs + run) >= targetScore) {
           }
         : bowler
     );
-  
-    setRuns((prev) => prev + run);
+
+    setRuns(newRuns);
     setTotalDeliveries(newTotalDeliveries);
     setCurrentOverDeliveries(isOverCompleted ? 0 : newCurrentOverDeliveries);
     setBatsmen(updatedBatsmen);
     setBowlers(newBowlers);
-    setPendingBowlerChange(isOverCompleted && !isGameOver(newTotalDeliveries));
-    setGameOver(isGameOver(newTotalDeliveries));
+
+    if (inningNumber === 2 && targetScore && newRuns >= targetScore) {
+      setGameOver(true);
+      setWinCondition("target");
+      setLastScored(run.toString());
+      addCurrentOverEvent(run.toString());
+
+      const completedOvers = Math.floor(newTotalDeliveries / 6);
+      const ballsInCurrentOver = newTotalDeliveries % 6;
+      const overNumberSent = ballsInCurrentOver === 0 ? completedOvers - 1 : completedOvers;
+      const ballNumberSent = ballsInCurrentOver === 0 ? 6 : ballsInCurrentOver;
+
+      setBallEvent({
+        matchId,
+        inningNumber,
+        overNumber: overNumberSent,
+        ballNumber: ballNumberSent,
+        strikerId: striker?.id,
+        outBatsmanId: null,
+        nonStrikerId: nonStriker?.id,
+        bowlerId: bowlers[currentBowler]?.id,
+        runScored: run,
+        isWicket: false,
+        wicketType: null,
+        newBatsmenId: null,
+        boundaryType: bt,
+        extraRun: 0,
+        extraType: null,
+        currentStrikerId: updatedBatsmen[0]?.id,
+        currentNonStrikerId: updatedBatsmen[1]?.id,
+        totalRuns: newRuns,
+        totalOversLimit,
+        noBallType: null,
+        gameOver: true,
+        allOut: false,
+      });
+      return;
+    }
+
+    setPendingBowlerChange(isOverCompleted && !isGameOver(newTotalDeliveries, newRuns));
+    setGameOver(isGameOver(newTotalDeliveries, newRuns));
     setLastScored(run.toString());
-  
+
     addCurrentOverEvent(run.toString());
     if (isOverCompleted) resetCurrentOverEvents();
-  
-    // Set ballEvent for socket emit
+
+    const completedOvers = Math.floor(newTotalDeliveries / 6);
+    const ballsInCurrentOver = newTotalDeliveries % 6;
+    const overNumberSent = ballsInCurrentOver === 0 ? completedOvers - 1 : completedOvers;
+    const ballNumberSent = ballsInCurrentOver === 0 ? 6 : ballsInCurrentOver;
+
     setBallEvent({
       matchId,
       inningNumber,
-      OverNumber: Math.floor(newTotalDeliveries / 6),
-      ballNumber: newTotalDeliveries % 6,
+      overNumber: overNumberSent,
+      ballNumber: ballNumberSent,
       strikerId: striker?.id,
+      outBatsmanId: null,
       nonStrikerId: nonStriker?.id,
       bowlerId: bowlers[currentBowler]?.id,
       runScored: run,
       isWicket: false,
       wicketType: null,
-      newbatsmenid: null,
-      boundaryType: bt, // only explicitly set when using FOUR/SIX button
+      newBatsmenId: null,
+      boundaryType: bt,
       extraRun: 0,
-      extratype: null,
-      currentStrikerid: updatedBatsmen[0]?.id,
-      currentnonstrikerid: updatedBatsmen[1]?.id,
-      totalRuns: runs + run,
-      Totaloverslimit: totalOversLimit,
-      noBalltype: null,
-      gameOver: isGameOver(newTotalDeliveries),
-      Allout: allOut,
+      extraType: null,
+      currentStrikerId: updatedBatsmen[0]?.id,
+      currentNonStrikerId: updatedBatsmen[1]?.id,
+      totalRuns: newRuns,
+      totalOversLimit,
+      noBallType: null,
+      gameOver: isGameOver(newTotalDeliveries, newRuns),
+      allOut: false,
     });
   };
-  
 
-  // For non-run-out dismissals
   const handleNonRunOutOut = (dismissalType) => {
+    if (gameOver || allOut) return;
+
     const newTotalDeliveries = totalDeliveries + 1;
     const newCurrentOverDeliveries = currentOverDeliveries + 1;
     const outBatsman = batsmen[0];
     const nonStriker = batsmen[1];
 
-  // Save for later use
     outBatsmanRef.current = outBatsman;
     previousNonStrikerRef.current = nonStriker;
-     //const outBatsman = batsmen[0];
     const newOutBatsmen = [...outBatsmen, outBatsman];
-    // Remove the out batsman; keep the other on strike
-    const newBatsmen = [null, nonStriker]
+    const newBatsmen = [null, nonStriker];
 
-    // Update bowler stats
     const newBowlers = bowlers.map((bowler, index) =>
       index === currentBowler
         ? {
@@ -300,156 +462,272 @@ if (inningNumber === 1 && (runs + run) >= targetScore) {
     );
 
     const isOverCompleted = newCurrentOverDeliveries === 6;
-    const gameOverStatus = isGameOver(newTotalDeliveries);
     const allOutStatus = isTeamAllOut();
+    const gameOverStatus = isGameOver(newTotalDeliveries, runs) || allOutStatus;
 
-    setWickets((prev) => prev + 1);
+    setWickets((prev) => {
+      const newWickets = prev + 1;
+      if (newWickets === 10 && allOutStatus) {
+        setAllOut(true);
+        setGameOver(true);
+        setShowBatsmanModal(false);
+        setShowOutTypeModal(false);
+      } else {
+        setPendingBowlerChange(isOverCompleted && !gameOverStatus && !allOutStatus);
+        setShowBatsmanModal(!allOutStatus);
+        setShowOutTypeModal(false);
+      }
+      return newWickets;
+    });
     setTotalDeliveries(newTotalDeliveries);
     setCurrentOverDeliveries(isOverCompleted ? 0 : newCurrentOverDeliveries);
     setBatsmen(newBatsmen);
     setOutBatsmen(newOutBatsmen);
     setBowlers(newBowlers);
-    setPendingBowlerChange(isOverCompleted && !gameOverStatus && !allOutStatus);
-    setShowOutTypeModal(false);
-    setShowBatsmanModal(!allOutStatus);
+
     setAllOut(allOutStatus);
     setLastScored(dismissalType);
-    setGameOver(gameOverStatus || allOutStatus);
+    setGameOver(gameOverStatus);
 
-    // Add event to current over
     addCurrentOverEvent("OUT");
-    if (isOverCompleted) {
-      resetCurrentOverEvents();
-    }
+    if (isOverCompleted) resetCurrentOverEvents();
+
+    const completedOvers = Math.floor(newTotalDeliveries / 6);
+    const ballsInCurrentOver = newTotalDeliveries % 6;
+    const overNumberSent = ballsInCurrentOver === 0 ? completedOvers - 1 : completedOvers;
+    const ballNumberSent = ballsInCurrentOver === 0 ? 6 : ballsInCurrentOver;
+
+    setBallEvent({
+      matchId,
+      inningNumber,
+      overNumber: overNumberSent,
+      ballNumber: ballNumberSent,
+      strikerId: outBatsman?.id,
+      outBatsmanId: outBatsman?.id,
+      nonStrikerId: nonStriker?.id,
+      bowlerId: bowlers[currentBowler]?.id,
+      runScored: 0,
+      isWicket: true,
+      wicketType: dismissalType,
+      newBatsmenId: null,
+      boundaryType: null,
+      extraRun: 0,
+      extraType: null,
+      currentStrikerId: null,
+      currentNonStrikerId: nonStriker?.id,
+      totalRuns: runs,
+      totalOversLimit,
+      noBallType: null,
+      gameOver: gameOverStatus,
+      allOut: allOutStatus,
+    });
   };
 
-  // Called after runs are selected via the extra modal and type selection for Run Out
-  const handleRunOut = (selectedBatsman, runOutType, noBallSubType = null) => {
-    // Base delivery increment
-    let newTotalDeliveries = totalDeliveries + 1;
-    let newCurrentOverDeliveries = currentOverDeliveries + 1;
+  const handleRunOut = (selectedBatsman, runOutType, noBallSubType = null, selectedRuns = 0) => {
+    if (gameOver || allOut) return;
+
+    console.log("handleRunOut called with:", {
+      selectedBatsman,
+      runOutType,
+      noBallSubType,
+      selectedRuns,
+    });
+
+    let newTotalDeliveries = totalDeliveries;
+    let newCurrentOverDeliveries = currentOverDeliveries;
     preRunoutStrikerRef.current = batsmen[0]?.id;
     preRunoutNonStrikerRef.current = batsmen[1]?.id;
-    // Update striker’s score & ball count based on type
-    let newBatsmenData = [...batsmen];
-    let updatedBatsmen = newBatsmenData;
-    let newRuns = runs;
-    let newBowlers = bowlers.map((bowler, index) =>
-      index === currentBowler
-        ? { ...bowler, deliveries: bowler.deliveries + 1, wickets: bowler.wickets + 1 }
-        : bowler
-    );
 
-    // Handle different Run Out types
+    let newRuns = runs;
+    let updatedBatsmen = [...batsmen];
+    let newBowlers = [...bowlers];
+    let extraRun = 0;
+    let runScored = 0;
+    let incrementDelivery = false;
+    let swapBatsmen = false;
+
+    // Apply run rules based on delivery type, aligned with handleExtraRuns
     if (runOutType === "Normal") {
-      // Usual Run Out logic
-      newBatsmenData = batsmen.map((batsman, index) =>
+      incrementDelivery = true;
+      runScored = selectedRuns;
+      updatedBatsmen = batsmen.map((batsman, index) =>
         index === 0
-          ? { ...batsman, runs: batsman.runs + runOutRuns, balls: batsman.balls + 1 }
-          : { ...batsman }
+          ? { ...batsman, runs: batsman.runs + selectedRuns, balls: batsman.balls + 1 }
+          : batsman
       );
-      if (runOutRuns % 2 === 1) {
-        updatedBatsmen = [newBatsmenData[1], newBatsmenData[0]];
-      }
-      newRuns = runs + runOutRuns;
+      newRuns = runs + selectedRuns;
       newBowlers = bowlers.map((bowler, index) =>
         index === currentBowler
-          ? { ...bowler, runs: bowler.runs + runOutRuns }
+          ? {
+              ...bowler,
+              runs: bowler.runs + selectedRuns,
+              wickets: bowler.wickets + 1,
+              deliveries: incrementDelivery ? bowler.deliveries + 1 : bowler.deliveries,
+            }
           : bowler
       );
+      swapBatsmen = selectedRuns % 2 === 1;
+      extraRun = 0;
     } else if (runOutType === "Wide") {
-      // No ball increase, 1 extra run to bowler, no runs to batsman
-      newRuns = runs + 1; // Extra run for wide
+      newRuns = runs + 1 + selectedRuns;
       newBowlers = bowlers.map((bowler, index) =>
         index === currentBowler
-          ? { ...bowler, runs: bowler.runs + 1 }
+          ? {
+              ...bowler,
+              runs: bowler.runs + 1 + selectedRuns,
+              wickets: bowler.wickets + 1,
+            }
           : bowler
       );
-      // Balls do not increase, handled by not updating batsman.balls
+      extraRun = 1 + selectedRuns;
+      swapBatsmen = selectedRuns % 2 === 1;
     } else if (runOutType === "NoBall") {
+      newRuns = runs + 1 + selectedRuns;
+      extraRun = 1 + selectedRuns;
       if (noBallSubType === "Off the Bat") {
-        // Batsman gets runs scored (not extra), bowler gets runs scored + 1, balls do not increase
-        newBatsmenData = batsmen.map((batsman, index) =>
-          index === 0 ? { ...batsman, runs: batsman.runs + runOutRuns } : { ...batsman }
+        updatedBatsmen = batsmen.map((batsman, index) =>
+          index === 0
+            ? { ...batsman, runs: batsman.runs + selectedRuns }
+            : batsman
         );
-        updatedBatsmen = newBatsmenData;
-        newRuns = runs + runOutRuns; // Runs scored by batsman
         newBowlers = bowlers.map((bowler, index) =>
           index === currentBowler
-            ? { ...bowler, runs: bowler.runs + runOutRuns + 1 }
+            ? {
+                ...bowler,
+                runs: bowler.runs + 1 + selectedRuns,
+                wickets: bowler.wickets + 1,
+              }
             : bowler
         );
-        // Balls do not increase
-      } else if (noBallSubType === "Bye/Leg Bye") {
-        // Runs scored not given to batsman, balls not increased, only 1 run to bowler
-        newRuns = runs + 1; // Only 1 run to bowler (extra)
+      } else {
         newBowlers = bowlers.map((bowler, index) =>
           index === currentBowler
-            ? { ...bowler, runs: bowler.runs + 1 }
+            ? {
+                ...bowler,
+                runs: bowler.runs + 1,
+                wickets: bowler.wickets + 1,
+              }
             : bowler
         );
-        // No runs to batsman, balls do not increase
       }
+      swapBatsmen = selectedRuns % 2 === 1;
     } else if (runOutType === "Bye" || runOutType === "Leg Bye") {
-      // Neither batsman nor bowler gets runs (except scored runs), ball increases by 1
-      newBatsmenData = batsmen.map((batsman, index) =>
+      incrementDelivery = true;
+      updatedBatsmen = batsmen.map((batsman, index) =>
         index === 0
           ? { ...batsman, balls: batsman.balls + 1 }
-          : { ...batsman }
+          : batsman
       );
-      if (runOutRuns % 2 === 1) {
-        updatedBatsmen = [newBatsmenData[1], newBatsmenData[0]];
-      }
-      newRuns = runs; // No runs added
+      newRuns = runs + selectedRuns;
       newBowlers = bowlers.map((bowler, index) =>
         index === currentBowler
-          ? { ...bowler, runs: bowler.runs }
+          ? {
+              ...bowler,
+              wickets: bowler.wickets + 1,
+              deliveries: incrementDelivery ? bowler.deliveries + 1 : bowler.deliveries,
+            }
           : bowler
       );
+      extraRun = selectedRuns;
+      swapBatsmen = selectedRuns % 2 === 1;
     }
 
-    // Remove the batsman that got run out
+    if (swapBatsmen) {
+      updatedBatsmen = [updatedBatsmen[1], updatedBatsmen[0]];
+    }
+
+    // Apply out rules
     const newOutBatsmen = [...outBatsmen, selectedBatsman];
     const remainingBatsman =
-      updatedBatsmen[0].name === selectedBatsman.name ? updatedBatsmen[1] : updatedBatsmen[0];
-    const newBatsmen = [remainingBatsman];
+      updatedBatsmen[0].id === selectedBatsman.id ? updatedBatsmen[1] : updatedBatsmen[0];
+    const newBatsmen = [null, remainingBatsman];
+
+    if (incrementDelivery) {
+      newTotalDeliveries += 1;
+      newCurrentOverDeliveries += 1;
+    }
 
     const isOverCompleted = newCurrentOverDeliveries === 6;
-    const gameOverStatus = isGameOver(newTotalDeliveries);
     const allOutStatus = isTeamAllOut();
+    const gameOverStatus = isGameOver(newTotalDeliveries, newRuns) || allOutStatus;
 
+    setWickets((prev) => {
+      const newWickets = prev + 1;
+      if (newWickets === 10 && allOutStatus) {
+        setAllOut(true);
+        setGameOver(true);
+      } else {
+        setPendingBowlerChange(isOverCompleted && !gameOverStatus && !allOutStatus);
+        setShowBatsmanModal(!allOutStatus);
+      }
+      return newWickets;
+    });
     setRuns(newRuns);
-    setWickets((prev) => prev + 1);
     setTotalDeliveries(newTotalDeliveries);
     setCurrentOverDeliveries(isOverCompleted ? 0 : newCurrentOverDeliveries);
     setBatsmen(newBatsmen);
     setOutBatsmen(newOutBatsmen);
     setBowlers(newBowlers);
-    setPendingBowlerChange(isOverCompleted && !gameOverStatus && !allOutStatus);
-    setShowRunOutSelectionModal(false);
-    setShowBatsmanModal(!allOutStatus);
-    setAllOut(allOutStatus);
-    setLastScored(
-        runOutType === "Normal"
-          ? `Run Out (${runOutRuns} run${runOutRuns === 1 ? "" : "s"} completed)`
-          : runOutType === "Wide"
-          ? "Run Out (Wide)"
-          : runOutType === "NoBall"
-          ? `Run Out (No Ball - ${noBallSubType || "Bye/Leg Bye"})`
-          : runOutType === "Bye"
-          ? `Run Out (Bye - ${runOutRuns} run${runOutRuns === 1 ? "" : "s"} attempted)`
-          : runOutType === "Leg Bye"
-          ? `Run Out (Leg Bye - ${runOutRuns} run${runOutRuns === 1 ? "" : "s"} attempted)`
-          : "Run Out"
-      );
-      
-    setGameOver(gameOverStatus || allOutStatus);
     setRunOutRuns(0);
+    setExtraType(null);
+    setNoBallType(null);
+    setShowRunOutSelectionModal(false);
+    setShowRunOutTypeModal(false);
+    setShowRunOutNoBallTypeModal(false);
+    setShowExtraModal(false);
+    setShowOutTypeModal(false);
+
+    setLastScored(
+      runOutType === "Normal"
+        ? `Run Out (${selectedRuns} run${selectedRuns === 1 ? "" : "s"} completed)`
+        : runOutType === "Wide"
+        ? `Run Out (Wide + ${selectedRuns} run${selectedRuns === 1 ? "" : "s"})`
+        : runOutType === "NoBall"
+        ? `Run Out (No Ball - ${noBallSubType || "Bye/Leg Bye"} + ${selectedRuns} run${selectedRuns === 1 ? "" : "s"})`
+        : runOutType === "Bye"
+        ? `Run Out (Bye - ${selectedRuns} run${selectedRuns === 1 ? "" : "s"} attempted)`
+        : runOutType === "Leg Bye"
+        ? `Run Out (Leg Bye - ${selectedRuns} run${selectedRuns === 1 ? "" : "s"} attempted)`
+        : "Run Out"
+    );
 
     addCurrentOverEvent("OUT");
     if (isOverCompleted) {
       resetCurrentOverEvents();
     }
+
+    const completedOvers = Math.floor(newTotalDeliveries / 6);
+    const ballsInCurrentOver = newTotalDeliveries % 6;
+    const overNumberSent = ballsInCurrentOver === 0 ? completedOvers - 1 : completedOvers;
+    const ballNumberSent = ballsInCurrentOver === 0 ? 6 : ballsInCurrentOver;
+
+    const ballEventPayload = {
+      matchId,
+      inningNumber,
+      overNumber: overNumberSent,
+      ballNumber: ballNumberSent,
+      strikerId: preRunoutStrikerRef.current,
+      outBatsmanId: selectedBatsman?.id,
+      nonStrikerId: preRunoutNonStrikerRef.current,
+      bowlerId: bowlers[currentBowler]?.id,
+      runScored,
+      isWicket: true,
+      wicketType: "Run Out",
+      newBatsmenId: null,
+      boundaryType: null,
+      extraRun,
+      extraType: runOutType === "Normal" ? null : runOutType,
+      currentStrikerId: null,
+      currentNonStrikerId: remainingBatsman?.id,
+      totalRuns: newRuns,
+      totalOversLimit,
+      noBallType: runOutType === "NoBall" ? noBallSubType : null,
+      gameOver: gameOverStatus,
+      allOut: allOutStatus,
+    };
+
+    console.log("Setting ballEvent:", ballEventPayload); // Debug ballEvent
+    setBallEvent(ballEventPayload);
   };
 
   const handleOutButton = () => {
@@ -458,121 +736,174 @@ if (inningNumber === 1 && (runs + run) >= targetScore) {
   };
 
   const handleOutTypeSelection = (type) => {
+    console.log("Selected out type:", type); // Debug outType
     setOutType(type);
+    setShowOutTypeModal(false);
     if (type === "Run Out") {
-      setDismissalWasRunOut(true);
-      setExtraType("Run Out");
-      setShowOutTypeModal(false);
-      setShowExtraModal(true);
-    } else if (type === "Stump Out") {
+      setShowRunOutTypeModal(true);
+    } else if (type === "Stumped") {
       setShowStumpOutTypeModal(true);
-      setShowOutTypeModal(false);
     } else {
       handleNonRunOutOut(type);
     }
   };
 
-  // Handle Run Out type selection
   const handleRunOutTypeSelection = (runOutType) => {
+    console.log("Selected run out type:", runOutType); // Debug runOutType
+    setExtraType(runOutType);
+    setShowRunOutTypeModal(false);
     if (runOutType === "NoBall") {
       setShowRunOutNoBallTypeModal(true);
-      setShowExtraModal(false);
     } else {
-      setRunOutRuns(0); // Reset runs for Wide, Bye, Leg Bye, or Normal
-      setShowExtraModal(false);
-      setShowRunOutSelectionModal(true);
+      setShowExtraModal(true); // Open run selection for all types
     }
-    setShowRunOutTypeModal(false);
   };
 
-  // Handle Run Out No Ball sub-type selection
   const handleRunOutNoBallTypeSelection = (noBallSubType) => {
     setNoBallType(noBallSubType);
     setShowRunOutNoBallTypeModal(false);
+    setShowExtraModal(true); // Open run selection
+  };
+
+  const handleRunOutExtraRuns = (selectedRuns) => {
+    setRunOutRuns(selectedRuns);
     setShowExtraModal(false);
     setShowRunOutSelectionModal(true);
   };
 
-  // Handle Stump Out based on wide/normal selection
   const handleStumpOutTypeSelection = (isWide) => {
-    let newTotalDeliveries = totalDeliveries + 1;
-    const newCurrentOverDeliveries = currentOverDeliveries + 1;
+    if (gameOver || allOut) return;
+
+    let newTotalDeliveries = totalDeliveries;
+    let newCurrentOverDeliveries = currentOverDeliveries;
     const outBatsman = batsmen[0];
     const nonStriker = batsmen[1];
 
-  // Save for later use
     outBatsmanRef.current = outBatsman;
     previousNonStrikerRef.current = nonStriker;
     stumpOutWide.current = isWide ? 1 : 0;
 
-   // const outBatsman = batsmen[0];
     const newOutBatsmen = [...outBatsmen, outBatsman];
-    const newBatsmen = [batsmen[1]];
+    const newBatsmen = [null, nonStriker];
 
     let newRuns = runs;
-    let newBowlers = bowlers.map((bowler, index) =>
-      index === currentBowler
-        ? { ...bowler, deliveries: bowler.deliveries + 1, wickets: bowler.wickets + 1 }
-        : bowler
-    );
+    let newBowlers = bowlers;
 
     if (isWide) {
-      newTotalDeliveries = newTotalDeliveries - 1;
       newRuns = runs + 1;
       newBowlers = bowlers.map((bowler, index) =>
         index === currentBowler
-          ? { ...bowler, deliveries: bowler.deliveries + 1, runs: bowler.runs + 1, wickets: bowler.wickets + 1 }
+          ? {
+              ...bowler,
+              runs: bowler.runs + 1,
+              wickets: bowler.wickets + 1,
+            }
+          : bowler
+      );
+    } else {
+      newTotalDeliveries = totalDeliveries + 1;
+      newCurrentOverDeliveries = currentOverDeliveries + 1;
+      newBowlers = bowlers.map((bowler, index) =>
+        index === currentBowler
+          ? {
+              ...bowler,
+              deliveries: bowler.deliveries + 1,
+              wickets: bowler.wickets + 1,
+            }
           : bowler
       );
     }
 
     const isOverCompleted = newCurrentOverDeliveries === 6;
-    const gameOverStatus = isGameOver(newTotalDeliveries);
     const allOutStatus = isTeamAllOut();
+    const gameOverStatus = isGameOver(newTotalDeliveries, newRuns) || allOutStatus;
 
-    setWickets((prev) => prev + 1);
+    setWickets((prev) => {
+      const newWickets = prev + 1;
+      if (newWickets === 10 && allOutStatus) {
+        setAllOut(true);
+        setGameOver(true);
+        setShowBatsmanModal(false);
+        setShowOutTypeModal(false);
+        setShowExtraModal(false);
+      } else {
+        setPendingBowlerChange(isOverCompleted && !gameOverStatus && !allOutStatus);
+        setShowBatsmanModal(!allOutStatus);
+        setShowOutTypeModal(false);
+        setShowExtraModal(false);
+      }
+      return newWickets;
+    });
     setTotalDeliveries(newTotalDeliveries);
     setCurrentOverDeliveries(isOverCompleted ? 0 : newCurrentOverDeliveries);
     setBatsmen(newBatsmen);
     setOutBatsmen(newOutBatsmen);
     setBowlers(newBowlers);
     setRuns(newRuns);
-    setPendingBowlerChange(isOverCompleted && !gameOverStatus && !allOutStatus);
-    setShowStumpOutTypeModal(false);
-    setShowBatsmanModal(!allOutStatus);
+
     setAllOut(allOutStatus);
-    setLastScored(isWide ? "Stump Out (Wide)" : "Stump Out");
-    setGameOver(gameOverStatus || allOutStatus);
+    setLastScored(isWide ? "Stumped (Wide)" : "Stumped");
+    setGameOver(gameOverStatus);
 
     addCurrentOverEvent("OUT");
     if (isOverCompleted) {
       resetCurrentOverEvents();
     }
+
+    const completedOvers = Math.floor(newTotalDeliveries / 6);
+    const ballsInCurrentOver = newTotalDeliveries % 6;
+    const overNumberSent = ballsInCurrentOver === 0 ? completedOvers - 1 : completedOvers;
+    const ballNumberSent = ballsInCurrentOver === 0 ? 6 : ballsInCurrentOver;
+
+    setBallEvent({
+      matchId,
+      inningNumber,
+      overNumber: overNumberSent,
+      ballNumber: ballNumberSent,
+      strikerId: outBatsman?.id,
+      outBatsmanId: outBatsman?.id,
+      nonStrikerId: nonStriker?.id,
+      bowlerId: bowlers[currentBowler]?.id,
+      runScored: 0,
+      isWicket: true,
+      wicketType: "Stumped",
+      newBatsmenId: null,
+      boundaryType: null,
+      extraRun: isWide ? 1 : 0,
+      extraType: isWide ? "Wide" : null,
+      currentStrikerId: null,
+      currentNonStrikerId: nonStriker?.id,
+      totalRuns: newRuns,
+      totalOversLimit,
+      noBallType: null,
+      gameOver: gameOverStatus,
+      allOut: allOutStatus,
+    });
   };
 
-  // Extra runs handling for extras and Run Out
   const handleExtraRuns = (selectedRuns) => {
-    const preBallStrikerId = batsmen[0]?.id;
-    const preBallNonStrikerId = batsmen[1]?.id;
-    if (extraType === "Run Out") {
-      setRunOutRuns(selectedRuns);
-      setShowExtraModal(false);
-      setShowRunOutTypeModal(true); // Trigger Run Out type selection modal
+    if (gameOver || allOut) return;
+
+    // Prevent handleExtraRuns from processing run-out flows
+    if (outType === "Run Out") {
+      handleRunOutExtraRuns(selectedRuns);
       return;
     }
 
-    // For other extras (WD, NB, BYE, LB)
+    const preBallStrikerId = batsmen[0]?.id;
+    const preBallNonStrikerId = batsmen[1]?.id;
+
     let runsToAdd = 0;
     let addToBowlerRuns = 0;
     let swapBatsmen = false;
     let updatedBatsmen = [...batsmen];
     let incrementDelivery = false;
 
-    if (extraType === "WD") {
+    if (extraType === "Wide") {
       runsToAdd = 1 + selectedRuns;
       addToBowlerRuns = runsToAdd;
       swapBatsmen = selectedRuns % 2 === 1;
-    } else if (extraType === "NB") {
+    } else if (extraType === "No Ball") {
       runsToAdd = 1 + selectedRuns;
       addToBowlerRuns = 1;
       swapBatsmen = selectedRuns % 2 === 1;
@@ -580,9 +911,9 @@ if (inningNumber === 1 && (runs + run) >= targetScore) {
         updatedBatsmen = updatedBatsmen.map((batsman, index) =>
           index === 0 ? { ...batsman, runs: batsman.runs + selectedRuns } : batsman
         );
-        addToBowlerRuns = selectedRuns;
+        addToBowlerRuns = selectedRuns + 1;
       }
-    } else if (extraType === "BYE" || extraType === "LB") {
+    } else if (extraType === "Bye" || extraType === "Leg Bye") {
       runsToAdd = selectedRuns;
       addToBowlerRuns = 0;
       incrementDelivery = true;
@@ -603,7 +934,10 @@ if (inningNumber === 1 && (runs + run) >= targetScore) {
       newCurrentOverDeliveries += 1;
     }
 
+    const newRuns = runs + runsToAdd;
     const isOverCompleted = newCurrentOverDeliveries === 6;
+    const gameOverStatus = isGameOver(newTotalDeliveries, newRuns);
+
     const newBowlers = bowlers.map((bowler, index) =>
       index === currentBowler
         ? {
@@ -614,183 +948,160 @@ if (inningNumber === 1 && (runs + run) >= targetScore) {
         : bowler
     );
 
-    const gameOverStatus = isGameOver(newTotalDeliveries);
-
-    setRuns((prev) => prev + runsToAdd);
+    setRuns(newRuns);
     setTotalDeliveries(newTotalDeliveries);
     setCurrentOverDeliveries(isOverCompleted ? 0 : newCurrentOverDeliveries);
     setBatsmen(updatedBatsmen);
     setBowlers(newBowlers);
     setShowExtraModal(false);
+    setShowOutTypeModal(false);
     setPendingBowlerChange(incrementDelivery && isOverCompleted && !gameOverStatus);
     setLastScored(
       extraType +
-        (extraType === "NB" && noBallType ? ` (${noBallType})` : "") +
+        (extraType === "No Ball" && noBallType ? ` (${noBallType})` : "") +
         " + " +
         runsToAdd +
         " runs"
     );
     setGameOver(gameOverStatus);
-    const ballEventPayload = {
+
+    const completedOvers = Math.floor(newTotalDeliveries / 6);
+    const ballsInCurrentOver = newTotalDeliveries % 6;
+    const overNumberSent = ballsInCurrentOver === 0 ? completedOvers - 1 : completedOvers;
+    const ballNumberSent = ballsInCurrentOver === 0 ? 6 : ballsInCurrentOver;
+
+    setBallEvent({
       matchId,
       inningNumber,
-      OverNumber: Math.floor(newTotalDeliveries / 6),
-      ballNumber: newTotalDeliveries % 6,
-      strikerId: preBallStrikerId, // ✅ before ball
-      nonStrikerId: preBallNonStrikerId, // ✅ before ball
+      overNumber: overNumberSent,
+      ballNumber: ballNumberSent,
+      strikerId: preBallStrikerId,
+      outBatsmanId: null,
+      nonStrikerId: preBallNonStrikerId,
       bowlerId: bowlers[currentBowler]?.id,
-      runScored: runsToAdd,
+      runScored: 0,
       isWicket: false,
       wicketType: null,
-      newbatsmenid: null,
-      boundarytype: null,
+      newBatsmenId: null,
+      boundaryType: null,
       extraRun: runsToAdd,
-      extratype: extraType,
-      currentStrikerid: updatedBatsmen[0]?.id, // ✅ after ball
-      currentnonstrikerid: updatedBatsmen[1]?.id, // ✅ after ball
-      totalRuns: runs + runsToAdd,
-      Totaloverslimit: totalOversLimit,
-      noBalltype: extraType === "NB" ? noBallType : null,
+      extraType: extraType,
+      currentStrikerId: updatedBatsmen[0]?.id,
+      currentNonStrikerId: updatedBatsmen[1]?.id,
+      totalRuns: newRuns,
+      totalOversLimit,
+      noBallType: extraType === "No Ball" ? noBallType : null,
       gameOver: gameOverStatus,
-      Allout: false,
-    };
-    
-    socket.emit("ballEvent", ballEventPayload);
-    console.log("Emitted extra ball event:", ballEventPayload);
+      allOut: false,
+    });
 
     addCurrentOverEvent(
-      extraType === "NB" && noBallType === "bat"
-        ? `NB${selectedRuns}` // ✅ valid string interpolation
-        : extraType
+      extraType === "No Ball" && noBallType === "bat" ? `No Ball${selectedRuns}` : extraType
     );
-    
+
     if (isOverCompleted) {
       resetCurrentOverEvents();
     }
     setExtraType(null);
   };
-// Add this function within your Scoring component
-const startSecondInnings = () => {
-  setInningNumber(1);
-  setRuns(0);
-  setWickets(0);
-  setTotalDeliveries(0);
-  setCurrentOverDeliveries(0);
-  setGameOver(false);
-  setAllOut(false);
-  setBatsmen([]); // Reset batsmen for new selection.
-  setOutBatsmen([]);
-  setPendingBowlerChange(false);
-  setInitialPlayersSent(false);
-  // Reset the previously selected opening batsmen for the new inning
-  setSelectedInitialBatsmen([]);
-  // Re-open the initial batsmen modal for the second innings.
-  setShowInitialBatsmenModal(true);
-  console.log("Starting Second Innings. Target is", targetScore);
-};
 
-
+  const startSecondInnings = () => {
+    setInningNumber(2);
+    setRuns(0);
+    setWickets(0);
+    setTotalDeliveries(0);
+    setCurrentOverDeliveries(0);
+    setGameOver(false);
+    setAllOut(false);
+    setBatsmen([]);
+    setOutBatsmen([]);
+    setBowlers([
+      { id: 1, name: "Bowler1", deliveries: 0, runs: 0, wickets: 0 },
+      { id: 2, name: "Bowler2", deliveries: 0, runs: 0, wickets: 0 },
+    ]);
+    setPendingBowlerChange(false);
+    setInitialPlayersSent(false);
+    setSelectedInitialBatsmen([]);
+    setShowInitialBatsmenModal(true);
+    setCurrentBowler(0);
+    setBowlingOrder([]);
+    setWinCondition(null);
+    resetCurrentOverEvents();
+    console.log("Starting Second Innings. Target is", targetScore);
+  };
 
   // ----- Batsman & Bowler Selection -----
-
   const handleSelectBatsman = (selectedBatsman) => {
-    setBatsmen((prev) => {
+    setBatsmen((prevBatsmen) => {
       const outBatsman = outBatsmanRef.current;
       const nonStriker = previousNonStrikerRef.current;
-      // Prepare new batsmen pair (new batsman as striker)
-      const newBatsmen = [selectedBatsman, nonStriker]; 
-  
-      if (dismissalWasRunOut) {
-        setShowBatsmanModal(false);
-        setShowStrikerModal(true);
-        setDismissalWasRunOut(false);
-      } else {
-        // Close the batsman modal immediately
-        setShowBatsmanModal(false);
+      const newBatsmen = [selectedBatsman, nonStriker];
+
+      setBattingOrder((prevOrder) => {
+        const updatedOrder = [...prevOrder, selectedBatsman.id];
+
         const isStumpWide = stumpOutWide.current === 1;
+        const strikerBattingPosition = updatedOrder.indexOf(selectedBatsman.id) + 1;
+        const completedOvers = Math.floor(totalDeliveries / 6);
+        const ballsInCurrentOver = totalDeliveries % 6;
+        const overNumberSent = ballsInCurrentOver === 0 ? completedOvers - 1 : completedOvers;
+        const ballNumberSent = ballsInCurrentOver === 0 ? 6 : ballsInCurrentOver;
+
         const payload = {
           matchId,
           inningNumber,
-          OverNumber: Math.floor(totalDeliveries / 6),
-          ballNumber: totalDeliveries % 6,
-          strikerId: outBatsman,
-          nonStrikerId: nonStriker,
+          overNumber: overNumberSent,
+          ballNumber: ballNumberSent,
+          outBatsmanId: outBatsman?.id,
+          strikerId: outBatsman?.id,
+          nonStrikerId: nonStriker?.id,
           bowlerId: bowlers[currentBowler]?.id,
-          runScored: 0,
           isWicket: true,
           wicketType: outType,
-          newbatsmenid: selectedBatsman,
-          boundarytype: null,
+          batsmanId: selectedBatsman.id,
+          boundaryType: null,
           extraRun: isStumpWide ? 1 : 0,
-          extratype: isStumpWide ? "WD" : (extraType === "Run Out" ? null : extraType),
-          currentStrikerid: selectedBatsman,
-          currentnonstrikerid: nonStriker,
+          extraType: isStumpWide ? "Wide" : null,
+          currentStrikerId: selectedBatsman.id,
+          currentNonStrikerId: nonStriker.id,
           totalRuns: runs,
-          Totaloverslimit: totalOversLimit,
-          noBalltype: null,
+          totalOversLimit,
+          noBallType: null,
           gameOver,
-          Allout: allOut,
+          allOut,
+          teamId: battingTeamId,
+          battingPosition: strikerBattingPosition,
         };
-  
-        socket.emit("wicketEvent", payload);
-        console.log("Wicket Event Sent:other than Run out", payload);
-        stumpOutWide.current = 0;
-      }
-  
-      // **NEW ADDITION:**
-      // If we are in the second innings, automatically open the bowler modal
-      if (inningNumber === 1) {
-        setShowInitialBowlerModal(true);
-      }
-      
-      return newBatsmen;
-    });
-  };
-  
 
-  const handleStrikerSelection = (selectedBatsman) => {
-    setBatsmen((prev) => {
-      const other = prev.find((b) => b.name !== selectedBatsman.name);
-      const updatedBatsmen = [selectedBatsman, other];
-      setShowStrikerModal(false);
-      const payload = {
-        matchId,
-        inningNumber,
-        OverNumber: Math.floor(totalDeliveries / 6),
-        ballNumber: totalDeliveries % 6,
-        strikerId: preRunoutStrikerRef.current, // batsman who got out
-        nonStrikerId: preRunoutNonStrikerRef.current,
-        bowlerId: bowlers[currentBowler]?.id,
-        runScored: 0,
-        isWicket: true,
-        wicketType: outType,
-        newbatsmenid: selectedBatsman?.id, // just selected batsman
-        boundarytype: null,
-        extraRun: 0,
-        extratype: extraType === "Run Out" ? null : extraType,
-        currentStrikerid: updatedBatsmen[0]?.id,
-        currentnonstrikerid: updatedBatsmen[1]?.id,
-        totalRuns: runs,
-        Totaloverslimit: totalOversLimit,
-        noBalltype: noBallType,
-        gameOver,
-        Allout: allOut
-      };
-  
-      socket.emit("wicketEvent", payload);
-      console.log("wicket event Runout",payload);
-      return [selectedBatsman, other];
+        socket.emit("battingStats", payload);
+        console.log("New batsman data sent:", payload);
+        stumpOutWide.current = 0;
+
+        return updatedOrder;
+      });
+
+      setShowBatsmanModal(false);
+      setShowOutTypeModal(false);
+      setShowExtraModal(false);
+      setShowRunOutTypeModal(false);
+      setShowRunOutNoBallTypeModal(false);
+      setShowStumpOutTypeModal(false);
+      setShowRunOutSelectionModal(false);
+      setOutType(""); // Reset outType after batsman selection
+
+      return newBatsmen;
     });
   };
 
   const handleSelectInitialBatsman = (batsman) => {
     setSelectedInitialBatsmen((prev) => {
       let selected = [...prev];
-      if (!selected.find((b) => b.name === batsman.name)) {
+      if (!selected.find((b) => b.id === batsman.id)) {
         selected.push(batsman);
       }
       if (selected.length === 2) {
         setBatsmen(selected);
+        setBattingOrder(selected.map((b) => b.id));
         setShowInitialBatsmenModal(false);
         setShowInitialBowlerModal(true);
       }
@@ -799,39 +1110,52 @@ const startSecondInnings = () => {
   };
 
   const handleSelectInitialBowler = (index) => {
+    const newBowler = bowlers[index];
+    const updatedOrder = [...bowlingOrder, newBowler.id];
+    setBowlingOrder(updatedOrder);
     setCurrentBowler(index);
     setShowInitialBowlerModal(false);
+
+    const uniqueOrder = Array.from(new Set(updatedOrder));
+    const bowlingPosition = uniqueOrder.indexOf(newBowler.id) + 1;
+
+    socket.emit("bowlingStats", {
+      matchId,
+      inningNumber,
+      bowlerId: newBowler.id,
+      teamId: bowlingTeamId,
+      bowlingPosition,
+    });
+    console.log("Sent initial bowler payload:", {
+      matchId,
+      inningNumber,
+      bowlerId: newBowler.id,
+      bowlingPosition,
+    });
   };
 
   const handleSelectBowler = (index) => {
+    const newBowler = bowlers[index];
+
+    const updatedOrder = [...bowlingOrder, newBowler.id];
+    setBowlingOrder(updatedOrder);
+
+    const uniqueOrder = Array.from(new Set(updatedOrder));
+    const bowlingPosition = uniqueOrder.indexOf(newBowler.id) + 1;
+
     setCurrentBowler(index);
     setPendingBowlerChange(false);
-    const newBowler = bowlers[index];
+
     const payload = {
       matchId,
       inningNumber,
-      OverNumber: Math.floor(totalDeliveries / 6),
-      ballNumber: totalDeliveries % 6,
-      strikerId: batsmen[0]?.id,
-      nonStrikerId: batsmen[1]?.id,
-      bowlerId: newBowler?.id,
-      runScored: 0,
-      isWicket: false,
-      wicketType: null,
-      newbatsmenid: null,
-      boundarytype: null,
-      extraRun: 0,
-      extratype: null,
-      currentStrikerid: batsmen[0]?.id,
-      currentnonstrikerid: batsmen[1]?.id,
-      totalRuns: runs,
-      Totaloverslimit: totalOversLimit,
-      noBalltype: null,
-      gameOver,
-      Allout: false
+      bowlerId: newBowler.id,
+      teamId: bowlingTeamId,
+      bowlingPosition,
+      currentStrikerId: batsmen[0]?.id,
+      currentNonStrikerId: batsmen[1]?.id,
     };
-  
-    socket.emit("bowlerChanged", payload);
+    socket.emit("bowlingStats", payload);
     console.log("Sent bowler change payload:", payload);
   };
 
@@ -839,16 +1163,15 @@ const startSecondInnings = () => {
   const totalOversDisplay =
     Math.floor(totalDeliveries / 6) + (totalDeliveries % 6) / 10;
 
-  const currentBowlerData = bowlers[currentBowler];
+  const currentBowlerData = bowlers[currentBowler] || { deliveries: 0, runs: 0, wickets: 0 };
   const bowlerOvers =
     Math.floor(currentBowlerData.deliveries / 6) +
     (currentBowlerData.deliveries % 6) / 10;
 
-  // IMPORTANT: Use name-based filtering to prevent showing batsmen that are already playing
   const availableBatsmen = allBatsmen.filter(
     (b) =>
-      !batsmen.some((bt) => bt && bt.name === b.name) &&
-      !outBatsmen.some((ob) => ob && ob.name === b.name)
+      !batsmen.some((bt) => bt && bt.id === b.id) &&
+      !outBatsmen.some((ob) => ob && ob.id === b.id)
   );
 
   // ----- Main handleScore function -----
@@ -856,16 +1179,19 @@ const startSecondInnings = () => {
     if (gameOver || allOut) return;
     if (type === "run") {
       const run = parseInt(value);
-      const bt = (source === "button" && (run === 4 || run === 6)) ? value : null;
+      if (source === "custom" && (isNaN(run) || run > 10)) {
+        alert("Custom runs cannot exceed 10!");
+        return;
+      }
+      const bt = source === "button" && (run === 4 || run === 6) ? (run === 4 ? "Four" : "Six") : null;
       if (source === "button" && (run === 4 || run === 6)) {
-        setBoundaryType(value); // ✅ only set when from button
-        console.log(boundaryType);
+        setBoundaryType(bt);
       } else {
         setBoundaryType(null);
       }
-      handleRun(run,bt);
+      handleRun(run, bt);
     } else if (type === "extra") {
-      if (value === "NB") {
+      if (value === "No Ball") {
         setShowNoBallTypeModal(true);
         setExtraType(value);
       } else {
@@ -887,70 +1213,72 @@ const startSecondInnings = () => {
           overs={totalOversDisplay}
           totalOvers={totalOversLimit}
           tossInfo={
-            inningNumber === 0
+            inningNumber === 1
               ? "Team A won the toss and elected to bat"
-              : `Chasing Target: ${targetScore} runs`
+              : `Chasing Target: ${targetScore || 0} runs`
           }
         />
-        {/* After your ScoreDisplay component */}
-{inningNumber === 0 && gameOver && (
-  <div className="game-over">
-    First Innings Over! <br />
-    Final Score: {runs}/{wickets}
-    <br />
-    <button onClick={startSecondInnings}>
-      Start Second Innings
-    </button>
-  </div>
-)}
-{inningNumber === 1 && targetScore && !gameOver && (
-  <div className="target-info">
-    <p>
-      Need {targetScore - runs} runs in {totalOversLimit * 6 - totalDeliveries} balls
-    </p>
-  </div>
-)}
-{inningNumber === 1 && gameOver && (
-  <div className="game-over">
-    Second Innings Over! <br />
-    {runs >= targetScore
-      ? "Chasing team wins!"
-      : "Chasing team loses!"}
-  </div>
-)}
-
-        {gameOver && !allOut && (
-          <div className="game-over">Game Over: Maximum overs reached!</div>
-        )}
-        {allOut && (
+        {inningNumber === 1 && (gameOver || allOut) && (
           <div className="game-over">
-            All Out: Team is all out! Inning Over!
+            First Innings Over! <br />
+            Final Score: {runs}/{wickets}
+            <br />
+            <button onClick={startSecondInnings}>Start Second Innings</button>
           </div>
         )}
+        {inningNumber === 2 && targetScore && !gameOver && (
+          <div className="target-info">
+            <p>
+              Need {targetScore - runs} runs in {totalOversLimit * 6 - totalDeliveries} balls
+            </p>
+          </div>
+        )}
+        {inningNumber === 2 && gameOver && winCondition === "target" && (
+          <div className="game-over">
+            Final Score: {runs}/{wickets} <br />
+            {battingTeamName} won by {10 - wickets} wickets!
+          </div>
+        )}
+        {inningNumber === 2 && gameOver && winCondition !== "target" && (
+          <div className="game-over">
+            Final Score: {runs}/{wickets} <br />
+            Game Over: Maximum overs reached! <br />
+            {runs >= targetScore
+              ? `${battingTeamName} won by ${10 - wickets} wickets!`
+              : `${bowlingTeamName} won by ${targetScore - runs} runs!`}
+          </div>
+        )}
+        {allOut && (
+          <div className="game-over">All Out: Team is all out! Inning Over!</div>
+        )}
 
-        {/* Display current over's ball-by-ball events */}
         <CurrentOverEvents events={currentOverEvents} />
 
         <div className="scoring-player-info">
-          <PlayerInfo type="batsman" players={batsmen} teamName="Team A"/>
+          <PlayerInfo type="batsman" players={batsmen} teamName={battingTeamName} />
           <PlayerInfo
             type="bowler"
-            player={{ ...currentBowlerData, overs: bowlerOvers, maidens: 0 }} teamName="Team B"
+            player={{ ...currentBowlerData, overs: bowlerOvers, maidens: 0 }}
+            teamName={bowlingTeamName}
           />
         </div>
 
-        <ScoringButtons onScore={handleScore} lastScored={lastScored} disabled={gameOver || allOut} />
+        <ScoringButtons
+          onScore={handleScore}
+          lastScored={lastScored}
+          disabled={gameOver || allOut}
+        />
 
         {/* ------------- Modals ------------- */}
         {showNoBallTypeModal && (
           <Modal>
-            <h3>No Ball: Runs off the bat or bye/leg bye?</h3>
+            <h3>No Ball: Runs off the bat or Bye/Leg Bye?</h3>
             <button
               onClick={() => {
                 setShowNoBallTypeModal(false);
                 setShowExtraModal(true);
                 setNoBallType("bat");
-                setExtraType("NB");
+                setExtraType("No Ball");
               }}
             >
               Off the Bat
@@ -959,8 +1287,8 @@ const startSecondInnings = () => {
               onClick={() => {
                 setShowNoBallTypeModal(false);
                 setShowExtraModal(true);
-                setNoBallType("bye/leg bye");
-                setExtraType("NB");
+                setNoBallType("Bye/Leg Bye");
+                setExtraType("No Ball");
               }}
             >
               Bye/Leg Bye
@@ -982,27 +1310,15 @@ const startSecondInnings = () => {
         {showOutTypeModal && (
           <Modal>
             <h3>Select Dismissal Type</h3>
-            <button onClick={() => handleOutTypeSelection("Bowled")}>
-              Bowled
+            <button onClick={() => handleOutTypeSelection("Bowled")}>Bowled</button>
+            <button onClick={() => handleOutTypeSelection("Caught")}>Catch</button>
+            <button onClick={() => handleOutTypeSelection("Stumped")}>Stump Out</button>
+            <button onClick={() => handleOutTypeSelection("Hit Wicket")}>Hit Wicket</button>
+            <button onClick={() => handleOutTypeSelection("handled the Ball")}>
+              Handled the Ball
             </button>
-            <button onClick={() => handleOutTypeSelection("Catch")}>
-              Catch
-            </button>
-            <button onClick={() => handleOutTypeSelection("Stump Out")}>
-              Stump Out
-            </button>
-            <button onClick={() => handleOutTypeSelection("Hit Wicket")}>
-              Hit Wicket
-            </button>
-            <button onClick={() => handleOutTypeSelection("Retired Hurt")}>
-              Retired Hurt
-            </button>
-            <button onClick={() => handleOutTypeSelection("LBW")}>
-              LBW
-            </button>
-            <button onClick={() => handleOutTypeSelection("Run Out")}>
-              Run Out
-            </button>
+            <button onClick={() => handleOutTypeSelection("LBW")}>LBW</button>
+            <button onClick={() => handleOutTypeSelection("Run Out")}>Run Out</button>
           </Modal>
         )}
 
@@ -1012,7 +1328,7 @@ const startSecondInnings = () => {
             {batsmen.map((batsman, index) => (
               <button
                 key={index}
-                onClick={() => handleRunOut(batsman, outType, noBallType)}
+                onClick={() => handleRunOut(batsman, extraType, noBallType, runOutRuns)}
               >
                 {batsman.name}
               </button>
@@ -1023,21 +1339,11 @@ const startSecondInnings = () => {
         {showRunOutTypeModal && (
           <Modal>
             <h3>Run Out: Was it Normal, Wide, No Ball, Bye, or Leg Bye?</h3>
-            <button onClick={() => handleRunOutTypeSelection("Normal")}>
-              Normal
-            </button>
-            <button onClick={() => handleRunOutTypeSelection("Wide")}>
-              Wide
-            </button>
-            <button onClick={() => handleRunOutTypeSelection("NoBall")}>
-              No Ball
-            </button>
-            <button onClick={() => handleRunOutTypeSelection("Bye")}>
-              Bye
-            </button>
-            <button onClick={() => handleRunOutTypeSelection("Leg Bye")}>
-              Leg Bye
-            </button>
+            <button onClick={() => handleRunOutTypeSelection("Normal")}>Normal</button>
+            <button onClick={() => handleRunOutTypeSelection("Wide")}>Wide</button>
+            <button onClick={() => handleRunOutTypeSelection("NoBall")}>No Ball</button>
+            <button onClick={() => handleRunOutTypeSelection("Bye")}>Bye</button>
+            <button onClick={() => handleRunOutTypeSelection("Leg Bye")}>Leg Bye</button>
           </Modal>
         )}
 
@@ -1058,14 +1364,14 @@ const startSecondInnings = () => {
             <h3>Stump Out: Was it a Wide or Normal delivery?</h3>
             <button
               onClick={() => {
-                handleStumpOutTypeSelection(false); // Normal
+                handleStumpOutTypeSelection(false);
               }}
             >
               Normal
             </button>
             <button
               onClick={() => {
-                handleStumpOutTypeSelection(true); // Wide
+                handleStumpOutTypeSelection(true);
               }}
             >
               Wide
@@ -1081,17 +1387,6 @@ const startSecondInnings = () => {
                 {batsman.name}
               </button>
             ))}
-          </Modal>
-        )}
-
-        {showStrikerModal && (
-          <Modal>
-            <h3>Select Striker</h3>
-            {batsmen.filter(Boolean).map((batsman, index) => (
-            <button key={index} onClick={() => handleStrikerSelection(batsman)}>
-               {batsman.name}
-            </button>
-             ))}
           </Modal>
         )}
 
@@ -1111,14 +1406,13 @@ const startSecondInnings = () => {
             <h3>Select Opening Batsmen</h3>
             <p>
               {selectedInitialBatsmen.length > 0 &&
-                "Selected: " +
-                selectedInitialBatsmen.map((b) => b.name).join(", ")}
+                "Selected: " + selectedInitialBatsmen.map((b) => b.name).join(", ")}
             </p>
             {allBatsmen.map((batsman, index) => (
               <button
                 key={index}
                 onClick={() => handleSelectInitialBatsman(batsman)}
-                disabled={selectedInitialBatsmen.find((b) => b.name === batsman.name)}
+                disabled={selectedInitialBatsmen.find((b) => b.id === batsman.id)}
               >
                 {batsman.name}
               </button>
@@ -1158,7 +1452,6 @@ const ScoreDisplay = ({ runs, wickets, overs, totalOvers, tossInfo }) => (
   </div>
 );
 
-// Shows the ball-by-ball events in the current over horizontally
 const CurrentOverEvents = ({ events }) => {
   return (
     <div className="current-over-events">
@@ -1203,7 +1496,6 @@ const PlayerInfo = ({ type, players, player, teamName }) => {
   return null;
 };
 
-
 const ScoringButtons = ({ onScore, lastScored, disabled }) => {
   const [customRun, setCustomRun] = useState("");
 
@@ -1228,24 +1520,25 @@ const ScoringButtons = ({ onScore, lastScored, disabled }) => {
         <input
           type="number"
           value={customRun}
-          onChange={(e) => setCustomRun(e.target.value)} style={{ width: "60px" ,height:"40px" }}
+          onChange={(e) => setCustomRun(e.target.value)}
+          style={{ width: "60px", height: "40px" }}
         />
         <button onClick={() => onScore("run", customRun)} disabled={disabled}>
           Submit Custom Run
         </button>
       </div>
       <div>
-        <button onClick={() => onScore("extra", "WD")} disabled={disabled}>
-          WD
+        <button onClick={() => onScore("extra", "Wide")} disabled={disabled}>
+          Wide
         </button>
-        <button onClick={() => onScore("extra", "NB")} disabled={disabled}>
-          NB
+        <button onClick={() => onScore("extra", "No Ball")} disabled={disabled}>
+          No Ball
         </button>
-        <button onClick={() => onScore("extra", "BYE")} disabled={disabled}>
-          BYE
+        <button onClick={() => onScore("extra", "Bye")} disabled={disabled}>
+          Bye
         </button>
-        <button onClick={() => onScore("extra", "LB")} disabled={disabled}>
-          LB
+        <button onClick={() => onScore("extra", "Leg Bye")} disabled={disabled}>
+          Leg Bye
         </button>
         <button onClick={() => onScore("out", "OUT")} disabled={disabled}>
           OUT
@@ -1255,7 +1548,6 @@ const ScoringButtons = ({ onScore, lastScored, disabled }) => {
     </div>
   );
 };
-
 
 const Modal = ({ children }) => {
   return (
