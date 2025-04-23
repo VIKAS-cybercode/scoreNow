@@ -79,10 +79,12 @@ const insertBallEvent = async (ballEventData) => {
 
         // 3. Update matches table
         const scoreIncrement = runScored + extraRun;
-        const overProgress = overNumber + (ballNumber / 10 != 0.6) ? ballNumber / 10 : 1.0 ;  // Convert ballNumber (1-6) to 0.1-0.6
+        const overProgress =overNumber +((ballNumber / 10 !== 0.6)? (ballNumber / 10) : 1.0); // Convert ballNumber (1-6) to 0.1-0.6
         const isWide = extraType === 'Wide';
         const isNoBall = extraType === 'No Ball';
-
+        const isBye = (extraType==='Bye'||extraType==='Leg Bye');
+        const isNoBallBat= isNoBall?ballEventData.noBallType==='bat':0;
+        const isNoBallBye =isNoBall?ballEventData.noBallType==='Bye/Leg Bye':0;
         const updateMatchesQuery = `
             UPDATE matches
             SET
@@ -115,12 +117,12 @@ const insertBallEvent = async (ballEventData) => {
         ]);
 
         // 4. Update batting stats
-        const incrementBallsFaced = extraType !== 'Wide';
+        const incrementBallsFaced = extraType !== 'Wide'&& extraType !== 'No Ball';
         const foursIncrement = boundaryType === 'Four' ? 1 : 0;
         const sixesIncrement = boundaryType === 'Six' ? 1 : 0;
         const isOut = isWicket && outBatsmanId === strikerId;
         const outStatus = isOut ? wicketType : 'Not Out';
-
+        console.log(outStatus);
         const upsertBattingQuery = `
             INSERT INTO "battingInningsPlayerStats" (
                 "matchId", "inningNumber", "batsmanId", "battingPosition",
@@ -142,17 +144,18 @@ const insertBallEvent = async (ballEventData) => {
             inning,
             strikerId,
             ballEventData.battingPosition,
-            runScored,
+            (isWide||isBye||(isNoBall&&isNoBallBye))?0:((isNoBall&&isNoBallBat)?scoreIncrement-1:scoreIncrement),
             incrementBallsFaced ? 1 : 0,
             foursIncrement,
             sixesIncrement,
-            isOut ? outStatus : null,
+            outStatus,
             isOut ? bowlerId : null,
             isOut && (wicketType === 'Caught' || wicketType === 'Run Out' || wicketType === 'Stumped') ? fielderId : null
         ]);
 
         // 5. Update bowling stats
-        const runsGivenIncrement = runScored + (['Wide', 'No Ball'].includes(extraType) ? extraRun : 0);
+        const incrementBallsBowled=extraType !== 'Wide'&& extraType !== 'No Ball';
+        // const runsGivenIncrement = runScored + (['Wide', 'No Ball'].includes(extraType) ? extraRun : 0);
         const wicketsIncrement = (isWicket && wicketType !== 'Run Out') ? 1 : 0;
 
         const upsertBowlingQuery = `
@@ -160,24 +163,27 @@ const insertBallEvent = async (ballEventData) => {
                 "matchId", "inningNumber", "bowlerId", "bowlingPosition",
                 "overs", "runsGiven", "wickets", "noBall", "wideBall"
             )
-            VALUES ($1, $2, $3, $4, 0.1, $5, $6, $7, $8)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
             ON CONFLICT ("matchId", "inningNumber", "bowlerId") DO UPDATE SET
-                "overs" = "bowlingInningsPlayerStats"."overs" + 0.1,
+                "overs" = "bowlingInningsPlayerStats"."overs" + EXCLUDED."overs",
                 "runsGiven" = "bowlingInningsPlayerStats"."runsGiven" + EXCLUDED."runsGiven",
                 "wickets" = "bowlingInningsPlayerStats"."wickets" + EXCLUDED."wickets",
                 "noBall" = "bowlingInningsPlayerStats"."noBall" + EXCLUDED."noBall",
                 "wideBall" = "bowlingInningsPlayerStats"."wideBall" + EXCLUDED."wideBall";
-        `;
+    `;
+
         await client.query(upsertBowlingQuery, [
             matchId,
             inning,
             bowlerId,
             ballEventData.bowlingPosition,
-            runsGivenIncrement,
+            incrementBallsBowled ? 0.1 : 0, // if no ball or wide then no increment otherwise +0.1 sinc it is an over increment 
+            (isBye)?0:((isNoBallBye)?1:scoreIncrement),
             wicketsIncrement,
             extraType === 'No Ball' ? 1 : 0,
             extraType === 'Wide' ? 1 : 0
         ]);
+
 
         await client.query('COMMIT');
         console.log(ballEvent);
