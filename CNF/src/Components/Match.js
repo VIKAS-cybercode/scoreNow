@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect,useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import "./Match.css";
 import LiveStream from "./LiveStream";
@@ -25,15 +25,128 @@ const Match = () => {
     inning1: { batting: [], bowling: [], partnership: "0(0)" },
     inning2: { batting: [], bowling: [], partnership: "0(0)" } });
   const [currentInning, setCurrentInning] = useState(1);
+  const [latestBowlerId, setLatestBowlerId] = useState(null);
   const [teamsData, setTeamsData] = useState({
     team1: { teamId:null, name: "", players: [] },
     team2: { teamId:null, name: "", players: [] }
   });
-  const currentInningData = innings[`inning${currentInning}`] || { batting: [], bowling: [], partnership: "0(0)" };
-  socket.on("inningOverEventClient",(data)=>{
-      setCurrentInning((currentInning)=>currentInning+1)
-  })
   
+  useEffect(() => {
+    const handleInningOver = ({ inningData }) => {
+      setCurrentInning(old => {
+        const next = old + 1;
+  
+        // Ensure inningData exists and has proper defaults
+        const safeInningData = inningData || {
+          batting: [],
+          bowling: [],
+          partnership: "0(0)"
+        };
+  
+        // seed the new inning's structure
+        setInnings(prev => ({
+          ...prev,
+          [`inning${next}`]: {
+            batting: safeInningData.batting,
+            bowling: safeInningData.bowling,
+            partnership: safeInningData.partnership
+          }
+        }));
+  
+        return next;
+      });
+    };
+  
+    socket.on("inningOverEventClient", handleInningOver);
+    return () => socket.off("inningOverEventClient", handleInningOver);
+  }, [socket]);
+  
+
+  // 2) Memoize the slice of state you actually want to render:
+  const currentInningData = useMemo(() => {
+    return innings[`inning${currentInning}`] || {
+      batting: [],
+      bowling: [],
+      partnership: "0(0)"
+    };
+  }, [innings, currentInning]);
+  useEffect(() => {
+    const handleBowlingStats = (updatedData) => {
+      setLatestBowlerId(updatedData.bowlerId);
+      console.log("Bowling stats:", updatedData); // Better logging
+      const overToBalls = (overStr) => {
+        const [over, balls] = overStr.toString().split('.').map(Number);
+        return over * 6 + (balls || 0);
+      };
+      
+      const totalFirstInningBalls = overToBalls(updatedData.firstInningOver);
+      const maxBalls =updatedData.oversPerSide * 6;
+      
+      const isSecondInning =
+        updatedData.firstInningWicket === 10 ||
+        totalFirstInningBalls >= maxBalls;
+      
+      const updatedInning = isSecondInning ? 2 : 1;
+
+      setCurrentInning(updatedInning); // ✅ this updates for future renders
+
+      // Use dynamic inningKey from `updatedInning`, not stale state
+      const inningKey = `inning${updatedInning}`;
+      const liveInningData = updatedData[inningKey] || {};
+      
+      setInnings(prev => ({
+        ...prev,
+        [inningKey]: {
+          batting:     liveInningData?.batting     ?? prev[inningKey]?.batting     ?? [],
+          bowling:     liveInningData?.bowling     ?? prev[inningKey]?.bowling     ?? [],
+          partnership: liveInningData?.partnership ?? prev[inningKey]?.partnership ?? "0(0)"
+        }
+      }));
+
+    };
+  
+    const handleBattingStats = (updatedData) => {
+      console.log("Batting stats:",updatedData); // Better logging
+      const overToBalls = (overStr) => {
+        const [over, balls] = overStr.toString().split('.').map(Number);
+        return over * 6 + (balls || 0);
+      };
+      
+      const totalFirstInningBalls = overToBalls(updatedData.firstInningOver);
+      const maxBalls =updatedData.oversPerSide * 6;
+      
+      const isSecondInning =
+        updatedData.firstInningWicket === 10 ||
+        totalFirstInningBalls >= maxBalls;
+      
+      const updatedInning = isSecondInning ? 2 : 1;
+
+      setCurrentInning(updatedInning); // ✅ this updates for future renders
+
+      // Use dynamic inningKey from `updatedInning`, not stale state
+      const inningKey = `inning${updatedInning}`;
+      const liveInningData = updatedData[inningKey] || {};
+      
+      setInnings(prev => ({
+        ...prev,
+        [inningKey]: {
+          batting:     liveInningData?.batting     ?? prev[inningKey]?.batting     ?? [],
+          bowling:     liveInningData?.bowling     ?? prev[inningKey]?.bowling     ?? [],
+          partnership: liveInningData?.partnership ?? prev[inningKey]?.partnership ?? "0(0)"
+        }
+      }));
+    };
+  
+    // Add listeners
+    socket.on("bowlingStatsClient", handleBowlingStats);
+    socket.on("battingStatsClient", handleBattingStats);
+  
+    // Cleanup function
+    return () => {
+      socket.off("bowlingStatsClient", handleBowlingStats);
+      socket.off("battingStatsClient", handleBattingStats);
+    };
+  }, [currentInning,matchId]);
   // Transform match data from API
   const getInningTeams = (data, inning) => {
     const team1 = data.teams.team1;
@@ -96,17 +209,31 @@ const Match = () => {
         ];
 
         // Optional: Prepare chaseInfo if applicable.
-        const chaseInfo =
-          data.status === "live" &&
-          data.firstInningScore &&
-          data.secondInningScore
-            ? `${bowlingTeam.name} require ${
-                data.firstInningScore - data.secondInningScore + 1
-              } runs in ${
-                data.oversPerSide * 6 - Math.floor(data.secondInningOver * 6)
-              } balls`
-            : "";
+        const remainingRuns = data.firstInningScore - data.secondInningScore + 1;
+        const remainingBalls = data.oversPerSide * 6 - Math.floor(data.secondInningOver * 6);
         
+        let chaseInfo = "";
+        
+        // Only compute chaseInfo in the second inning (i.e. when currentInning !== 1)
+        if (currentInning !== 1 && data.status === "live" 
+            && data.firstInningScore != null 
+            && data.secondInningScore != null) 
+        {
+          if (remainingRuns <= 0) {
+            const wicketsRemaining = 10 - data.secondInningWicket;
+            chaseInfo = `${battingTeam.name} wins by ${wicketsRemaining} wicket${wicketsRemaining !== 1 ? 's' : ''}`;
+          } 
+          else if (remainingBalls <= 0) {
+            const runsMargin = remainingRuns - 1;
+            chaseInfo = `${bowlingTeam.name} wins by ${runsMargin} run${runsMargin !== 1 ? 's' : ''}`;
+          } 
+          else {
+            chaseInfo = `${battingTeam.name} require ${remainingRuns} runs in ${remainingBalls} balls`;
+          }
+        }
+        
+        // if currentInning === 1, chaseInfo stays as ""
+         
 
             let tossWinnerTeamName = "";
             if (data.teams) {
@@ -173,9 +300,35 @@ const Match = () => {
       // (e.g., when first inning is complete, update currentInning to 2).
       // For the purpose of this demo, let's assume we update currentInning when firstInningScore stops updating.
       console.log(updatedData);
-      if (updatedData.inning1) setInnings(i => ({ ...i, inning1: updatedData.inning1 }));
-      if (updatedData.inning2) setInnings(i => ({ ...i, inning2: updatedData.inning2 }));
+      const overToBalls = (overStr) => {
+        const [over, balls] = overStr.toString().split('.').map(Number);
+        return over * 6 + (balls || 0);
+      };
+      
+      const totalFirstInningBalls = overToBalls(updatedData.firstInningOver);
+      const maxBalls = matchData.oversPerSide * 6;
+      
+      const isSecondInning =
+        updatedData.firstInningWicket === 10 ||
+        totalFirstInningBalls >= maxBalls;
+      
+      const updatedInning = isSecondInning ? 2 : 1;
 
+      setCurrentInning(updatedInning); // ✅ this updates for future renders
+
+      // Use dynamic inningKey from `updatedInning`, not stale state
+      const inningKey = `inning${updatedInning}`;
+      const liveInningData = updatedData[inningKey] || {};
+      
+      setInnings(prev => ({
+        ...prev,
+        [inningKey]: {
+          batting:     liveInningData?.batting     ?? prev[inningKey]?.batting     ?? [],
+          bowling:     liveInningData?.bowling     ?? prev[inningKey]?.bowling     ?? [],
+          partnership: liveInningData?.partnership ?? prev[inningKey]?.partnership ?? "0(0)"
+        }
+      }));
+      
       // Determine current inning
       // setCurrentInning(prev => {
       //   if (updatedData.firstInningScore !== matchData?.teams[0].runs && updatedData.secondInningScore === 0) return 1;
@@ -196,7 +349,7 @@ const Match = () => {
         tossSelection: matchData.tossSelection,
         tossWinner: matchData.tossWinner,
       };
-      const { battingTeam, bowlingTeam } = getInningTeams(dataForRoles, currentInning);
+      const { battingTeam, bowlingTeam } = getInningTeams(dataForRoles, updatedInning);
 
       // Update the scoreboard accordingly.
       const updatedTeamsScoreData =
@@ -232,14 +385,26 @@ const Match = () => {
             ];
 
       // Optionally update chaseInfo.
-      const updatedChaseInfo =
-        updatedData.status === "live" &&
-        updatedData.firstInningScore &&
-        updatedData.secondInningScore
-          ? `${battingTeam.name} require ${
-              updatedData.firstInningScore - updatedData.secondInningScore + 1
-            } runs in ${updatedData.oversPerSide * 6 - (updatedData.secondInningOver) * 6} balls`
-          : "";
+      const remainingRuns = updatedData.firstInningScore - updatedData.secondInningScore + 1;
+      const remainingBalls = updatedData.oversPerSide * 6 - updatedData.secondInningOver * 6;
+
+      let updatedChaseInfo = "";
+
+      if (
+        currentInning !== 1 && updatedData.status === "live" &&
+        updatedData.firstInningScore != null &&
+        updatedData.secondInningScore != null
+      ) {
+        if (remainingRuns <= 0) {
+          const wicketsRemaining = 10 - updatedData.secondInningWicket;
+          updatedChaseInfo = `${battingTeam.name} wins by ${wicketsRemaining} wicket${wicketsRemaining !== 1 ? 's' : ''}`;
+        } else if (remainingBalls <= 0) {
+          const runsMargin = remainingRuns - 1;
+          updatedChaseInfo = `${bowlingTeam.name} wins by ${runsMargin} run${runsMargin !== 1 ? 's' : ''}`;
+        } else {
+          updatedChaseInfo = `${battingTeam.name} require ${remainingRuns} runs in ${remainingBalls} balls`;
+        }
+      }
 
       setMatchData((prevData) => ({
         ...prevData,
@@ -292,7 +457,7 @@ const Match = () => {
       { runs: matchData.teams[0].runs, overs: matchData.teams[0].overs } :
       { runs: matchData.teams[1].runs, overs: matchData.teams[1].overs };
   
-    return calculateRR(runs, overs); // ✅ Now it calls the helper instead of itself
+    return calculateRR(runs*6, (Math.floor(overs)*6+(overs-Math.floor(overs))*10)); // ✅ Now it calls the helper instead of itself
   };
 
   if (loading) return <div className="loading">Loading match details...</div>;
@@ -312,7 +477,7 @@ const Match = () => {
           <h1>{matchData.tournamentName}</h1>
           <div className="match-info">
           <span>{`${matchData.ground}, ${matchData.city}, ${matchData.matchType}`}</span>
-          <span className="toss-info">{`Toss: ${matchData.tossWinnerTeamName} chose ${matchData.tossSelection}`}</span>
+          <span className="toss-info">{matchData.tossSelection? `Toss: ${matchData.tossWinnerTeamName} chose ${matchData.tossSelection}`: 'Toss has not yet been conducted'}</span>
           </div>
         </header>
 
@@ -384,7 +549,7 @@ const Match = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {(currentInningData.batting || []).map((batter, i) => (
+                  {(currentInningData.batting || []).filter(batter => batter.outStatus === "Not Out").map((batter, i) => (
                       <tr key={i}>
                         <td>{batter.batsmanName}{batter.onStrike && "*"}</td>
                         <td>{batter.runs}</td>
@@ -400,22 +565,32 @@ const Match = () => {
                 <h3>Bowlers</h3>
                 <table className="bowlers-table">
                   <thead>
-                    <tr><th>Bowler</th><th>O</th><th>M</th><th>R</th><th>W</th><th>Eco</th></tr>
+                    <tr>
+                      <th>Bowler</th>
+                      <th>O</th>
+                      <th>M</th>
+                      <th>R</th>
+                      <th>W</th>
+                      <th>Eco</th>
+                    </tr>
                   </thead>
                   <tbody>
-                    {(currentInningData.bowling || []).map((bowler, i) => (
-                      <tr key={i}>
-                        <td>{bowler.bowlerName}</td>
-                        <td>{bowler.overs}</td>
-                        <td>{bowler.maidenOvers}</td>
-                        <td>{bowler.runsGiven}</td>
-                        <td>{bowler.wickets}</td>
-                        <td>{calculateEconomy(bowler.runsGiven, bowler.overs)}</td>
-                      </tr>
-                    ))}
+                    {(currentInningData.bowling || [])
+                      .filter((_, i, arr) => arr.length < 2 || (Math.floor(arr[i].overs) * 6 + (arr[i].overs - Math.floor(arr[i].overs)) * 10) % 6 !== 0)
+                      .map((bowler, i) => (
+                        <tr key={i}>
+                          <td>{bowler.bowlerName}</td>
+                          <td>{bowler.overs}</td>
+                          <td>{bowler.maidenOvers}</td>
+                          <td>{bowler.runsGiven}</td>
+                          <td>{bowler.wickets}</td>
+                          <td>{calculateEconomy(bowler.runsGiven, (Math.floor(bowler.overs) * 6 + (bowler.overs - Math.floor(bowler.overs)) * 10))}</td>
+                        </tr>
+                      ))
+                    }
+
                   </tbody>
                 </table>
-
                 <div className="current-partnership">
                   <strong>Current Partnership:</strong> {matchData.inning1?.partnership || '0(0)'}
                 </div>
@@ -457,7 +632,7 @@ const Match = () => {
               </div>
               <div className="stat-item">
                 <span>Projected Score</span>
-                <span>{matchData.projectedScore}</span>
+                <span>{calculateCurrentRR()}</span>
               </div>
             </div>
             <div className="match-officials">
