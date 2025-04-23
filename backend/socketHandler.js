@@ -35,45 +35,81 @@ const socketHandler = (io) => {
     //   socket.to(matchId).emit("initialPlayersSelectedClient", ballEvent);
     // })
 
-    socket.on("ballEvent",async (ballData)=>{
+    // socket.on("ballEvent",async (ballData)=>{
+    //   try {
+    //     // Insert into database
+    //     console.log(ballData)
+    //     const newBallEvent = await insertBallEvent(ballData);
+        
+    //     // Broadcast updated match state to all clients
+    //     const matchState = await getMatchDataForBroadcast(ballData.matchId); // Implement this
+    //     console.log(matchState);
+    //     socket.to(ballData.matchId).emit("ballEventClient", matchState);
+    //     // io.emit('matchUpdate', matchState);
+        
+    //     // Optional: Send confirmation to sender
+    //     // socket.emit('ballEventSuccess', newBallEvent);
+    //   } catch (err) {
+    //     console.error('Socket error:', err);
+    //     socket.emit('ballEventError', {
+    //       message: 'Failed to process ball event',
+    //       error: err.message
+    //     });
+    //   }
+    // });
+    socket.on("ballEvent", async (ballData) => {
       try {
         // Insert into database
-        console.log(ballData)
+        console.log(ballData);
         const newBallEvent = await insertBallEvent(ballData);
-        
+    
         // Broadcast updated match state to all clients
         const matchState = await getMatchDataForBroadcast(ballData.matchId); // Implement this
-        console.log(matchState);
-        socket.to(ballData.matchId).emit("ballEventClient", matchState);
-        // io.emit('matchUpdate', matchState);
+    
+        // Extract current striker ID (assumes structure like ballData.strikerId or similar)
+        const currentStrikerId = ballData.currentStrikerId;
+        const bowlerId=ballData.bowlerId;
+        const noBallType=ballData.noBallType;
+        console.log({ ...matchState, currentStrikerId ,bowlerId,noBallType});
         
+        // Emit to match room
+        socket.to(ballData.matchId).emit("ballEventClient", {
+          ...matchState,
+          currentStrikerId,bowlerId,noBallType
+        });
+    
         // Optional: Send confirmation to sender
         // socket.emit('ballEventSuccess', newBallEvent);
+    
       } catch (err) {
-        console.error('Socket error:', err);
-        socket.emit('ballEventError', {
-          message: 'Failed to process ball event',
-          error: err.message
+        console.error("Socket error:", err);
+        socket.emit("ballEventError", {
+          message: "Failed to process ball event",
+          error: err.message,
         });
       }
     });
+    
     socket.on("battingStats", async (dataObject) => {
+      console.log("batting",dataObject);
       try {
         const insertedStats = await insertBattingInningsStats({
             matchId: dataObject.matchId,
             batsmanId: dataObject.batsmanId,
             inningNumber: dataObject.inningNumber,
-            battingPosition: dataObject.battingPosition
+            battingPosition: dataObject.battingPosition,
+            outStatus:'Not Out'
           });
-          
+          const matchState = await getMatchDataForBroadcast(dataObject.matchId);
           console.log("Inserted batting stats:", insertedStats);
-          socket.to(dataObject.matchId).emit("battingStatsClient", insertedStats);
+          socket.to(dataObject.matchId).emit("battingStatsClient", matchState);
         } catch (error) {
             console.error("Error inserting batting stats:", error);
         }
         
       });  
       socket.on("bowlingStats",async (dataObject)=>{
+        console.log("bowling",dataObject);
         try {
           const insertedStats = await insertBowlingInningsStats({
             matchId: dataObject.matchId,
@@ -81,9 +117,12 @@ const socketHandler = (io) => {
             inningNumber: dataObject.inningNumber,
             bowlingPosition: dataObject.bowlingPosition
           });
-          
+          const bowlerId=dataObject.bowlerId;
+          const matchState = await getMatchDataForBroadcast(dataObject.matchId);
           console.log("Inserted bowling stats:", insertedStats);
-          socket.to(dataObject.matchId).emit("bowlingStatsClient", insertedStats);
+          socket.to(dataObject.matchId).emit("bowlingStatsClient", {
+            ...matchState,bowlerId
+          });
         } catch (error) {
           console.error("Error inserting bowling stats:", error);
         }
@@ -97,7 +136,9 @@ const socketHandler = (io) => {
       // Broadcast to the room (except sender) using socket.to
       socket.to(matchId).emit("inningOverEventClient", data);
     })
-
+    socket.on("matchEnd",(data)=>{
+      console.log(data);
+    })
 
     /// chat message socket -------------------------------------------------------
     socket.on("sendMessage", async (data) => {
