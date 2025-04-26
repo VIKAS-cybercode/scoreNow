@@ -1,0 +1,269 @@
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Oswald:wght@200..700&family=Russo+One&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Audiowide&family=Goldman:wght@400;700&family=Racing+Sans+One&family=Tourney:ital,wght@0,100..900;1,100..900&family=Zen+Dots&display=swap');
+
+.bebas-neue-regular {
+  font-family: "Bebas Neue", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+/* Live Matches Page */
+.matches-page-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  background-color: #f9f9f9;    /* light background */
+  color: #333;                  /* dark text */
+  min-height: 100vh;
+  padding: 20px;
+  position: relative;
+  padding-top: 120px;
+}
+
+.matches-heading {
+  font-family: 'Bebas Neue', sans-serif;
+  letter-spacing: 3px;
+  font-size: 1.5rem;
+  font-weight: 200;
+  color: #222;
+}
+
+/* Heading */
+h2 {
+  font-size: 26px;
+  font-weight: bold;
+  color: #222;
+}
+
+/* Change Button */
+.LiveMatches-highlight {
+  color: #d21919;  /* blue accent */
+}
+
+.change {
+  color: #1976d2;
+  font-style: italic;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+/* Matches Grid - Horizontal Layout */
+.matches-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+  width: 100%;
+}
+
+/* Match Card */
+.matches-match-card {
+  font-family: 'Courier New', Courier, monospace;
+  background-color: #ffffff;    /* white card */
+  border-radius: 12px;
+  padding: 15px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* subtle shadow */
+  width: 25%;
+  text-align: center;
+  position: relative;
+  transition: transform 0.2s;
+  height: 375px;
+}
+
+.match-card:hover {
+  transform: scale(1.03);
+}
+
+/* Match Details */
+.tournament {
+  font-style: italic;
+  color: #555;
+}
+
+.location {
+  font-size: 14px;
+  color: #666;
+}
+
+.stage {
+  font-weight: bold;
+}
+
+.team1 {
+  color: #388e3c;  
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.team2 {
+    color: #388e3c;  
+    font-weight: bold;
+    font-size: 18px;
+}
+
+.score {
+  font-size: 22px;
+  font-weight: bold;
+  color: #0288d1;  /* teal-blue score */
+}
+
+.toss {
+  font-weight: bold;
+  color: #444;
+}
+
+/* Live Badge */
+.live-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: #d32f2f;  /* red badge */
+  color: white;
+  font-size: 14px;
+  padding: 3px 8px;
+  border-radius: 5px;
+  font-weight: bold;
+}
+
+/* Popup Overlay */
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.8);  /* light overlay */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+/* Popup Box */
+.popup {
+  font-family: 'Bebas Neue', sans-serif;
+  background: #ffffff;             /* white popup */
+  border-radius: 12px;
+  padding: 25px;
+  width: 90%;
+  max-width: 400px;
+  max-height: 80vh;
+  overflow-y: auto;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  animation: fadeIn 0.3s ease-in-out;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Popup Heading */
+.popup h2 {
+  letter-spacing: 3px;
+  color: #222;
+  font-size: 20px;
+  margin-bottom: 15px;
+}
+
+/* Search Input */
+.search-input,
+.search-bar {
+  width: 90%;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background-color: #fafafa;
+  color: #333;
+  font-size: 16px;
+  outline: none;
+  transition: all 0.3s ease-in-out;
+  margin-bottom: 15px;
+}
+
+.search-bar::placeholder {
+  color: #888;
+}
+
+.search-bar:focus {
+  border-color: #1976d2;
+  background-color: #fff;
+}
+
+/* Location List */
+.location-list {
+  max-height: 50vh;
+  overflow-y: auto;
+  width: 100%;
+  text-align: left;
+  padding: 10px;
+}
+
+.location-list-p {
+  letter-spacing: 3px;
+}
+
+/* Location Option */
+.location-option {
+  padding: 8px;
+  cursor: pointer;
+  transition: 0.2s;
+  color: #333;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.location-option:hover {
+  background: #e3f2fd;  /* light blue hover */
+}
+
+/* Buttons */
+.popup-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+  width: 100%;
+}
+
+.popup button {
+  flex: 1;
+  margin: 0 5px;
+  padding: 10px 15px;
+  font-size: 16px;
+  font-weight: bold;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: 0.3s;
+  border: none;
+}
+
+.popup .cancel-btn {
+  background: #efefef;
+  color: #333;
+}
+
+.popup .cancel-btn:hover {
+  background: #ddd;
+}
+
+.popup .confirm-btn {
+  background: #1976d2;
+  color: white;
+}
+
+.popup .confirm-btn:hover {
+  background: #1565c0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .popup {
+    width: 95%;
+    max-height: 85vh;
+  }
+
+  .location-list {
+    max-height: 60vh;
+  }
+}

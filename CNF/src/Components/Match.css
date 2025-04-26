@@ -1,0 +1,328 @@
+/* --- Light Theme Variables --- */
+:root {
+  --bg-page: #fafafa;
+  --bg-panel: #ffffff;
+  --text-primary: #212121;
+  --text-secondary: #555555;
+  --accent: #3498db;
+  --highlight: #e74c3c;
+  --border-radius: 8px;
+  --box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* --- Container & Layout --- */
+.match-container {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: flex-start;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 20px;
+  gap: 30px;
+  margin-top: 100px;
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+}
+.matchTeam-name{
+  color:#3498db;
+  font-weight: bold;
+}
+.upperDiv {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  margin-right: 0;
+}
+
+.tournament-header-match {
+  max-width: 800px;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.tournament-header-match h1 {
+  font-size: 1.4rem;
+  margin-bottom: 10px;
+  color: var(--text-primary);
+}
+
+.match-info {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  color: var(--text-secondary);
+}
+
+.toss-info {
+  color: var(--highlight);
+  font-weight: bold;
+}
+
+/* --- Teams Panel --- */
+.teams-container {
+  display: flex;
+  justify-content: space-between;
+  margin: 20px 0;
+  padding: 15px;
+  background: var(--bg-panel);
+  border-radius: 8px;
+  max-width: 800px;
+  box-shadow: var(--box-shadow);
+}
+
+.team-name {
+  font-size: 1.2rem;
+  color: var(--text-primary);
+}
+
+/* --- Tabs Navigation --- */
+.match-tabs-wrapper {
+  width: 100%;
+  max-width: 900px;
+  margin: auto;
+}
+
+.match-tabs {
+  display: flex;
+  overflow-x: auto;
+  white-space: nowrap;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  background-color: var(--bg-panel);
+  padding: 10px;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+}
+
+.match-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.tab-button {
+  flex: 0 0 auto;
+  color: var(--text-secondary);
+  background: transparent;
+  border: none;
+  padding: 10px 15px;
+  cursor: pointer;
+}
+
+.tab-button.active {
+  color: var(--text-primary);
+  border-bottom: 2px solid var(--accent);
+}
+
+/* --- Tab Panels --- */
+.tab-content {
+  background-color: var(--bg-panel);
+  padding: 20px;
+  width: 100%;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+}
+
+/* --- Main Content --- */
+.main-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  max-width: 1000px;
+  /* background-color: pink; remove if unused */
+  gap: 30px;
+  margin: 20px auto 0;
+  padding: 0 20px;
+}
+
+.left-column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 700px;
+}
+
+.right-column {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+  padding: 20px;
+  border-radius: var(--border-radius);
+  height: fit-content;
+  position: sticky;
+  width: 400px;
+  background-color: var(--bg-panel);
+  box-shadow: var(--box-shadow);
+  top: 0;
+}
+
+/* --- Stats, Tables, Video --- */
+.stats-section,
+.match-status,
+.video-stream,
+.scoreboard,
+.stat-item,
+.match-officials,
+.match-details {
+  background: var(--bg-panel);
+  padding: 15px;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+}
+.scoreboard,.match-layout{
+  width: 100%;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+th, td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #ececec;
+}
+
+th {
+  background-color: var(--accent);
+  color: #ffffff;
+}
+
+.match-status {
+  /* already covered above */
+}
+
+.recent-events {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+
+.event {
+  padding: 4px 8px;
+  background: var(--accent);
+  color: #ffffff;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+/* --- Partnerships & recent balls --- */
+.current-partnership,
+.recent-balls {
+  margin-top: 10px;
+}
+
+.recent-balls .ball {
+  margin: 0 5px;
+  padding: 3px 6px;
+  background: #ececec;
+  border-radius: 4px;
+  color: var(--text-primary);
+}
+
+/* --- Scoreboard specifics --- */
+.scoreboard {
+  /* already covered above */
+}
+
+.team-score {
+  display: flex;
+  justify-content: space-between;
+  font-size: 18px;
+  margin: 10px 0;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: var(--border-radius);
+}
+
+.team-name {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.score {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.chase-info {
+  font-size: 14px;
+  color: var(--highlight);
+  margin-top: 20px;
+  padding: 10px;
+  background: #fdecea;
+  border-radius: 5px;
+}
+
+/* --- Layout wrapper --- */
+.main-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* --- Live Section (if still dark, now light) --- */
+.live-section {
+  color: var(--text-primary);
+  background: var(--bg-panel);
+  padding: 20px;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+}
+
+/* --- Batters / Bowlers tables (light overrides) --- */
+.batters-table,
+.bowlers-table {
+  width: 100%;
+  margin: 15px 0;
+  border-collapse: collapse;
+  background: var(--bg-panel);
+  color: var(--text-primary);
+}
+
+.batters-table th,
+.bowlers-table th {
+  background: var(--accent);
+  color: #fff;
+  padding: 10px;
+}
+
+.batters-table td,
+.bowlers-table td {
+  padding: 10px;
+  border-bottom: 1px solid #ececec;
+}
+
+/* --- Responsive --- */
+@media (max-width: 1024px) {
+  .main-content {
+    grid-template-columns: 1fr;
+  }
+
+  .right-column {
+    position: static;
+    order: -1;
+  }
+}
+
+@media (max-width: 768px) {
+  .teams-container {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  table {
+    font-size: 0.9rem;
+  }
+
+  .match-tabs button {
+    padding: 6px 12px;
+    font-size: 0.9em;
+    color: pink;
+  }
+}

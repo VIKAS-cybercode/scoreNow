@@ -1,0 +1,76 @@
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Oswald:wght@200..700&family=Russo+One&display=swap');
+
+.bebas-neue-regular {
+  font-family: "Bebas Neue", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+.anton-regular {
+  font-family: "Anton", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+.russo-one-regular {
+  font-family: "Russo One", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+h1 {
+  font-family: 'Bebas Neue', sans-serif;
+  letter-spacing: 5px;
+  color: white;
+}
+
+/* Carousel Container */
+.carousel-container {
+  padding-top: 250px;
+  margin-bottom: 200px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 99%;
+  max-height: 600px;
+  /* Let the border radius be managed by the inner container */
+}
+
+/* Carousel Wrapper with Rounded Corners */
+#carouselExample {
+  width: 80%;
+  border-radius: 20px;
+  overflow: hidden;  /* This ensures that the child images respect the rounded corners */
+}
+
+/* Carousel Items */
+.carousel-item {
+  width: 100%;
+  height: 600px; /* Consistent height for all slides */
+}
+
+/* Carousel Images */
+.carousel-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;  /* Ensures images cover the area without distortion */
+  /* Remove the border-radius here to let the parent container's radius show */
+}
+
+/* Controls Hover Effect (Optional) */
+.carousel-control-prev:hover,
+.carousel-control-next:hover {
+  background-color: transparent !important;
+}
+
+.carousel-control-prev-icon,
+.carousel-control-next-icon {
+  filter: none !important;
+}
+
+/* Optional: Styling for any feature images elsewhere */
+.feature-image {
+  width: 300px; 
+  height: 300px; 
+  object-fit: cover; 
+  border-radius: 10px;
+  aspect-ratio: 2 / 1;
+}

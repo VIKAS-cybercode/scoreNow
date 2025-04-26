@@ -1,0 +1,167 @@
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Bebas+Neue&family=Oswald:wght@200..700&family=Russo+One&display=swap');
+
+/* Light Theme Variables */
+:root {
+  --bg-page: #fafafa;
+  --bg-panel: #ffffff;
+  --text-primary: #212121;
+  --text-secondary: #555555;
+  --accent-highlight: #00ff99;
+  --border-radius: 15px;
+  --box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.bebas-neue-regular {
+  font-family: "Bebas Neue", sans-serif;
+  font-weight: 400;
+}
+.anton-regular {
+  font-family: "Anton", sans-serif;
+  font-weight: 400;
+}
+.russo-one-regular {
+  font-family: "Russo One", sans-serif;
+  font-weight: 400;
+}
+
+/* Profile Container */
+.profile-container {
+  font-family: 'Bebas Neue', sans-serif;
+  letter-spacing: 5px;
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+  min-height: 100vh;
+  text-align: center;
+  padding: 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-top: 50px;
+}
+
+/* Profile Header and Stats Side by Side */
+.profile-header-stats {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  background-color: var(--bg-panel);
+  padding: 20px;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+}
+
+/* Profile Header */
+.profile-header {
+  display: flex;
+  align-items: center;
+  background-color: var(--bg-panel);
+  padding: 20px;
+  border-radius: var(--border-radius);
+  flex: 1;
+  box-shadow: var(--box-shadow);
+}
+
+.profile-image img {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  border: 3px solid #ccc;
+}
+
+.profile-info {
+  margin-left: 15px;
+}
+
+.profile-info h2 {
+  margin: 0;
+  font-size: 35px;
+  color: var(--text-primary);
+}
+
+.profile-info p {
+  margin: 5px 0;
+  color: var(--text-secondary);
+}
+
+/* Stats Section */
+.stats-container {
+  display: flex;
+  justify-content: space-around;
+  background-color: var(--bg-panel);
+  padding: 15px;
+  border-radius: var(--border-radius);
+  flex: 1;
+  box-shadow: var(--box-shadow);
+}
+
+.profile-stat-box {
+  text-align: center;
+}
+
+.stat-value {
+  font-size: 28px;
+  font-weight: bold;
+  color: var(--accent-highlight);
+}
+
+.stat-label {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+/* Tabs */
+.tabs-container {
+  display: flex;
+  background-color: var(--bg-panel);
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: var(--box-shadow);
+}
+
+.tab-button {
+  font-family: 'Bebas Neue', sans-serif;
+  letter-spacing: 5px;
+  flex: 1;
+  padding: 12px;
+  font-size: 16px;
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.tab-button:hover {
+  background-color: #ececec;
+}
+
+.tab-button.active {
+  color: var(--accent-highlight);
+  border-bottom: 3px solid var(--accent-highlight);
+}
+
+/* Tab Content */
+.tab-content {
+  background: var(--bg-panel);
+  color: var(--text-primary);
+  padding: 20px;
+  min-height: 350px;
+  border-radius: 10px;
+  text-align: left;
+  box-shadow: var(--box-shadow);
+}
+
+.tab-content ul {
+  list-style: none;
+  padding: 0;
+}
+
+.tab-content li {
+  padding: 10px;
+  border-bottom: 1px solid #ececec;
+}
+
+.dark-text {
+  color: var(--text-secondary);
+}

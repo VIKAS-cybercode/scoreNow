@@ -1,0 +1,15 @@
+.container{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.card{
+    width: 70%;
+}
+.mb-3 input[name="oversPerSide"],
+.mb-3 input[name="oversPerBowler"],
+.mb-3 input[name="organiserId"],
+.mb-3 input[name="scorerId"]{
+    width: 100%;
+}

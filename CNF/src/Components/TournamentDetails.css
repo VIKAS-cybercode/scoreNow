@@ -1,0 +1,155 @@
+.tournament-details-container {
+    background-color: white;
+    color: rgb(34, 34, 34);
+    min-height: 100vh;
+    /* padding: 200px; */
+    padding-left: 150px;
+    padding-right: 150px;
+    padding-top: 100px;
+  }
+  
+  /* Header Section */
+  .tournament-header {
+    display: flex;
+    align-items: center;
+    background-color:rgb(34, 34, 34);
+    padding: 20px;
+    border-radius: 10px;
+    color: white;
+  }
+  
+  .tournament-logo {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    margin-right: 20px;
+  }
+  .tournament-info-td h1 {
+    font-size: 18px;
+    margin-bottom: 5px;
+    color: white;
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+  }
+  
+  .tournament-info-td p {
+    opacity: 0.8;
+    font-size: 14px;
+  }
+  .tournament-date-heading{
+    font-size: 4rem;
+  }
+  
+  .contact-btn {
+    background-color: grey;
+    opacity: 0.5;
+    color: black;
+    padding: 8px 16px;
+    border-radius: 5px;
+    margin-top: 10px;
+    cursor: pointer;
+    border: none;
+  }
+  .contact-btn:hover{
+    background-color:#f39c12;
+  }
+  
+  .stats {
+    display: flex;
+    margin-left: auto;
+  }
+  
+  .stat-box {
+    background-color: #292929;
+    padding: 15px;
+    border-radius: 8px;
+    margin-left: 15px;
+    text-align: center;
+    min-width: 100px;
+  }
+  
+  .stat-box h2 {
+    font-size: 24px;
+    color: #f39c12;
+  }
+  
+  .stat-box p {
+    font-size: 14px;
+    opacity: 0.8;
+  }
+  
+  /* Tabs */
+  .tabs {
+    display: flex;
+    border-radius: 8px;
+    padding: 10px;
+    margin-top: 20px;
+    background-color: rgb(34, 34, 34);
+  }
+  
+  .tabs button {
+    background: none;
+    border: none;
+    color: white;
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: 0.3s;
+    font-size: 14px;
+  }
+  
+  .tabs .active {
+    color: #f39c12;
+    font-weight: bold;
+    border-bottom: 2px solid #f39c12;
+  }
+  
+  /* Matches Section */
+  .matches-section {
+    margin-top: 20px;
+  }
+  
+  .match-filters {
+    display: flex;
+    gap: 10px;
+  }
+  
+  .match-filters button {
+    background-color: rgb(34, 34, 34);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    border: none;
+  }
+  
+  .match-filters .active-filter {
+    background-color: #f39c12;
+    color: rgb(34, 34, 34);
+  }
+  
+  .match-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-top: 15px;
+  }
+  
+  .match-card {
+    background-color: #1e1e1e;
+    padding: 15px;
+    border-radius: 10px;
+    width: 300px;
+    box-shadow: 0px 0px 10px rgba(255, 165, 0, 0.3);
+  }
+  
+  .match-card h3 {
+    font-size: 16px;
+    color: #f39c12;
+  }
+  
+  .match-card p {
+    font-size: 14px;
+    opacity: 0.8;
+  }
+  

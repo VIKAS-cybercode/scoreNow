@@ -1,0 +1,127 @@
+/* App.css */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background-color: #f9f9f9;
+}
+
+.video-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  /* height: 100vh; */
+  gap: 20px;
+  padding: 20px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+button {
+  background: #007bff;
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+button:hover {
+  background: #0056b3;
+}
+
+input {
+  width: 60%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.controls {
+  display: flex;
+  gap: 10px;
+}
+
+video,
+audio {
+  margin: 10px 0;
+  border-radius: 8px;
+}
+.participant-video{
+  height:200px;
+}
+.participantInfo{
+  margin-bottom:0.5rem;
+}
+.match-score {
+  background: #1e1e1e;
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: 10px;
+  width: fit-content;
+  max-width: 90%;
+  font-family: Arial, sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  white-space: nowrap;
+  overflow-x: auto;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+  border: 2px solid gold;
+  text-align: center;
+  margin: 20px auto;
+  margin-top:0px;
+  position: relative;
+}
+
+.match-score span {
+  font-size: 1rem;
+  font-weight: bold;
+}
+
+.balls {
+  display: flex;
+  gap: 5px;
+}
+
+.ball {
+  width: 30px;
+  height: 30px;
+  line-height: 30px;
+  text-align: center;
+  border-radius: 50%;
+  background: #ffcc00;
+  color: #000;
+  font-weight: bold;
+  font-size: 1rem;
+  display: inline-block;
+  box-shadow: 2px 2px 6px rgba(255, 215, 0, 0.8);
+}
+
+.wicket {
+  background: red;
+  color: white;
+}
+
+/* Centering the score div */
+.match-score-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+.controls {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.controls button {
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
+}

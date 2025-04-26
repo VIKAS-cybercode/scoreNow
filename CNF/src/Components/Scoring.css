@@ -1,0 +1,230 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Roboto:wght@400;500&display=swap');
+
+/* Light Theme Variables */
+:root {
+  --bg-page: #fafafa;
+  --bg-panel: #ffffff;
+  --text-primary: #212121;
+  --text-secondary: #555555;
+  --accent-button: #3a3f47;
+  --accent-button-hover: #50565e;
+  --border-radius: 5px;
+  --box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* Overall App Styles */
+.app {
+  font-family: 'Roboto', sans-serif;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  width: 100vw;
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+  padding: 10px;
+}
+
+/* Main container for scoring content */
+.scoring-main-div {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 80%;
+  text-align: center;
+  background-color: var(--bg-page);
+  color: var(--text-primary);
+}
+
+/* Header Styles */
+.scoring-header {
+  margin-top: 100px;
+  font-family: 'Bebas Neue', cursive;
+  font-size: 3rem;
+  background-color: var(--bg-panel);
+  color: var(--text-primary);
+  padding: 20px;
+  border-radius: var(--border-radius);
+  width: 60%;
+  text-align: center;
+  box-shadow: var(--box-shadow);
+  color:black;
+}
+.scoring-heading{
+  font-family: 'Bebas Neue', cursive;
+  font-size: 3rem;
+  color: black;
+  text-align: center;
+}
+/* Score Display Styles */
+.score-display {
+  margin: 20px 0;
+  background-color: var(--bg-panel);
+  padding: 15px;
+  border-radius: var(--border-radius);
+  box-shadow: var(--box-shadow);
+}
+
+.score-display h2 {
+  font-family: 'Bebas Neue', cursive;
+  font-size: 2.5rem;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.score-display p {
+  margin: 5px 0 0;
+  font-size: 1.2rem;
+  color: var(--text-secondary);
+}
+
+/* Player Info Styles */
+.scoring-player-info {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+  gap: 10px;
+  width: 60%;
+}
+
+.scoring-batsmen-info,
+.scoring-bowler-info {
+  flex: 1;
+  width: 3%;
+  background: var(--bg-panel);
+  padding: 15px;
+  border-radius: var(--border-radius);
+  font-size: 1.1rem;
+  color: var(--text-primary);
+  box-shadow: var(--box-shadow);
+}
+.scoring-buttons{
+  margin-top: 30px;
+}
+/* Scoring Buttons Styles */
+button {
+  margin: 5px;
+  padding: 10px 20px;
+  font-size: 1rem;
+  font-family: 'Roboto', sans-serif;
+  cursor: pointer;
+  background-color: rgb(0, 96, 206);
+  color: white;
+  border: none;
+  border-radius: var(--border-radius);
+  transition: background-color 0.3s ease;
+}
+
+button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+button:hover:not(:disabled) {
+  background-color: var(--accent-button-hover);
+}
+
+/* Input Style */
+input[type="number"] {
+  border: 1px solid #ccc;
+  border-radius: var(--border-radius);
+  padding: 8px;
+  font-size: 1rem;
+  text-align: center;
+  color: var(--text-primary);
+  width: 60px;
+}
+
+/* Modal Styles */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+}
+
+.modal-content {
+  background: var(--bg-panel);
+  padding: 20px;
+  border-radius: var(--border-radius);
+  text-align: center;
+  box-shadow: var(--box-shadow);
+  opacity: 0.95;
+}
+
+.modal-content button {
+  margin: 5px;
+  padding: 10px;
+  font-family: 'Roboto', sans-serif;
+  font-size: 1rem;
+}
+
+/* Current Over Events Styles */
+.current-over-events {
+  margin: 20px 0;
+}
+
+.ball-event {
+  display: inline-block;
+  margin: 0 5px;
+  padding: 8px 12px;
+  background-color: rgb(0, 96, 206);
+  color: white;
+  border-radius: 50%;
+  font-family: 'Roboto', sans-serif;
+  box-shadow: var(--box-shadow);
+  font-weight: 500;
+}
+
+/* Game Over and Target Info Styles */
+.game-over {
+  color: #ff5252;
+  font-size: 1.5rem;
+  margin: 10px 0;
+  background-color: var(--bg-panel);
+  padding: 15px;
+  border-radius: var(--border-radius);
+  font-family: 'Roboto', sans-serif;
+  box-shadow: var(--box-shadow);
+}
+
+.target-info {
+  background: var(--bg-panel);
+  padding: 15px;
+  border-radius: var(--border-radius);
+  margin: 10px 0;
+  font-family: 'Roboto', sans-serif;
+  font-size: 1.2rem;
+  color: var(--text-primary);
+  box-shadow: var(--box-shadow);
+}
+
+/* Last Scored Info */
+.last-scored {
+  margin-top: 10px;
+  font-style: italic;
+  font-size: 1rem;
+  color: var(--text-secondary);
+}
+
+/* Icon styles for batsman & bowler */
+.bat-icon,
+.ball-icon {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+.bat-icon { background-image: url("/public/Images/bat-icon.png"); }
+.ball-icon { background-image: url("/public/Images/leather-ball.png"); }
