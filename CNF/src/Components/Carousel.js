@@ -21,28 +21,28 @@ const Carousel = () => {
         {/* Carousel Inner */}
         <div className="carousel-inner">
           <div className="carousel-item active" data-bs-interval="2000">
-            <img src="/images/slide1.jpg" className="d-block w-100" alt="Slide 1" />
+            <img src="/Images/slide1.jpg" className="d-block w-100" alt="Slide 1" />
           </div>
           <div className="carousel-item" data-bs-interval="2000">
-            <img src="/images/slide2.jpg" className="d-block w-100" alt="Slide 2" />
+            <img src="/Images/slide2.jpg" className="d-block w-100" alt="Slide 2" />
           </div>
           <div className="carousel-item" data-bs-interval="2000">
-            <img src="/images/slide3.jpg" className="d-block w-100" alt="Slide 3" />
+            <img src="/Images/slide3.jpg" className="d-block w-100" alt="Slide 3" />
           </div>
           <div className="carousel-item" data-bs-interval="2000">
-            <img src="/images/slide4.jpg" className="d-block w-100" alt="Slide 4" />
+            <img src="/Images/slide4.jpg" className="d-block w-100" alt="Slide 4" />
           </div>
           <div className="carousel-item" data-bs-interval="2000">
-            <img src="/images/slide5.jpg" className="d-block w-100" alt="Slide 5" />
+            <img src="/Images/slide5.jpg" className="d-block w-100" alt="Slide 5" />
           </div>
           <div className="carousel-item" data-bs-interval="2000">
-            <img src="/images/slide6.jpg" className="d-block w-100" alt="Slide 6" />
+            <img src="/Images/slide6.jpg" className="d-block w-100" alt="Slide 6" />
           </div>
           <div className="carousel-item" data-bs-interval="2000">
-            <img src="/images/slide7.jpg" className="d-block w-100" alt="Slide 7" />
+            <img src="/Images/slide7.jpg" className="d-block w-100" alt="Slide 7" />
           </div>
           <div className="carousel-item" data-bs-interval="2000">
-            <img src="/images/slide8.webp" className="d-block w-100" alt="Slide 8" />
+            <img src="/Images/slide8.webp" className="d-block w-100" alt="Slide 8" />
           </div>
         </div>
 
