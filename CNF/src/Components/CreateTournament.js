@@ -43,7 +43,7 @@ const CreateTournament = () => {
     };
   
     try {
-      const response = await fetch("http://localhost:5000/api/tournaments/", {
+      const response = await fetch("/api/tournaments/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

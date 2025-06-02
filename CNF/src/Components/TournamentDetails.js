@@ -29,7 +29,7 @@ const TournamentDetails = () => {
   useEffect(() => {
     const fetchTournament = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/tournaments/${tournamentId}`);
+        const response = await fetch(`/api/tournaments/${tournamentId}`);
         const data = await response.json();
         setTournamentData(data);
         setLoading(false);

@@ -23,7 +23,7 @@ const Looking = () => {
 
   // Load existing entries from backend
   useEffect(() => {
-    fetch('http://localhost:5000/api/lookings')
+    fetch('/api/lookings')
       .then(res => res.json())
       .then(data => {
         // Ensure we get an array — backend might return { data: [...] }
@@ -75,7 +75,7 @@ const Looking = () => {
     };
 
     try {
-      const res = await fetch('http://localhost:5000/api/lookings', {
+      const res = await fetch('/api/lookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)

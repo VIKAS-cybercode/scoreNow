@@ -66,13 +66,13 @@ const Tournaments = () => {
     let endpoint = "";
 
     if (Routelocation.pathname === "/tournaments") {
-      endpoint = "http://localhost:5000/api/tournaments";
+      endpoint = "/api/tournaments";
       setShowCreateTournamentButton(false);
     } else if (Routelocation.pathname === `/players/${playerId}/tournaments`) {
-      endpoint = `http://localhost:5000/api/players/${playerId}/tournaments`;
+      endpoint = `/api/players/${playerId}/tournaments`;
       setShowCreateTournamentButton(false);
     } else if (Routelocation.pathname === `/players/${playerId}/organisedTournaments`) {
-      endpoint = `http://localhost:5000/api/players/${playerId}/organisedTournaments`;
+      endpoint = `/api/players/${playerId}/organisedTournaments`;
       setShowCreateTournamentButton(true);
     } 
     else {
@@ -107,7 +107,7 @@ const Tournaments = () => {
   
     const fetchLocations = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/locations");
+        const res = await fetch("/api/locations");
         const data = await res.json();
         setLocations(["All", ...data]);  // Include "All" manually
       } catch (error) {

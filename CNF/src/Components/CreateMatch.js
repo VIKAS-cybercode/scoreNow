@@ -33,13 +33,13 @@ export default function CreateMatch() {
   const [pitchType, setPitchType] = useState("Rough");
   useEffect(() => {
     if (match.tournamentId) {
-      fetch(`http://localhost:5000/api/teams/${match.tournamentId}`)
+      fetch(`/api/teams/${match.tournamentId}`)
         .then((res) => res.json())
         .then((data) => setTeams(Array.isArray(data) ? data : []))
         .catch(() => setTeams([]));
     } else {
       console.log("t");
-      fetch("http://localhost:5000/api/teams")
+      fetch("/api/teams")
         .then((res) => res.json())
         .then((data) => {
           setTeams(Array.isArray(data) ? data : [])
@@ -67,7 +67,7 @@ export default function CreateMatch() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch("http://localhost:5000/api/matches", {
+      const response = await fetch("/api/matches", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(match),

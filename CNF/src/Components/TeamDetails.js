@@ -17,7 +17,7 @@ const TeamDetails = () => {
   useEffect(() => {
     const fetchTeam = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/teams/${teamId}`);
+        const response = await fetch(`/api/teams/${teamId}`);
         const data = await response.json();
         setTeamData(data);
         console.log(data);
@@ -40,7 +40,7 @@ const TeamDetails = () => {
   const handleJoinTeam = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(`http://localhost:5000/api/teams/${teamId}`, {
+      const response = await fetch(`/api/teams/${teamId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ joinKey, teamId, playerId }),

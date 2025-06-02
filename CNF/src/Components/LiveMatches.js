@@ -86,15 +86,15 @@ const LiveMatches = () => {
     let endpoint = "";
 
     if (Routelocation.pathname === "/matches") {
-      endpoint = "http://localhost:5000/api/matches";
+      endpoint = "/api/matches";
       setShowCreateMatchButton(false);
     } else if (Routelocation.pathname === `/players/${playerId}/matches`) {
-      endpoint = `http://localhost:5000/api/players/${playerId}/matches`;
+      endpoint = `/api/players/${playerId}/matches`;
       setShowCreateMatchButton(false);
     } else if (
       Routelocation.pathname === `/players/${playerId}/organisedMatches`
     ) {
-      endpoint = `http://localhost:5000/api/players/${playerId}/organisedMatches`;
+      endpoint = `/api/players/${playerId}/organisedMatches`;
       setShowCreateMatchButton(true);
     } else {
       return;

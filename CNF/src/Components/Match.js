@@ -176,7 +176,7 @@ const Match = () => {
   useEffect(() => {
     const fetchMatchData = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/matches/${matchId}`);
+        const response = await fetch(`/api/matches/${matchId}`);
         const data = await response.json();
         console.log(data);
         // Determine current inning from match status (or set manually).

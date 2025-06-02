@@ -8,7 +8,7 @@ const News = () => {
   useEffect(() => {
     const fetchNews = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/cricket-news');
+        const response = await fetch('/api/cricket-news');
         
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);

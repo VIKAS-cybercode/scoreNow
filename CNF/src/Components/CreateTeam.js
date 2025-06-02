@@ -48,7 +48,7 @@ const CreateTeam = () => {
           status: 'Ongoing',
         };
 
-        const response = await fetch(`http://localhost:5000/api/players/${playerId}/teams`, {
+        const response = await fetch(`/api/players/${playerId}/teams`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

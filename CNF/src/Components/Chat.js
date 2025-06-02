@@ -4,7 +4,7 @@ import "./Chat.css";
 import { usePlayer } from "../PlayerContext";
 import socket from "./socket";
 
-const BASE_URL = "http://localhost:5000";
+//const BASE_URL = "http://localhost:5000";
 
 const Chat = () => {
   const { playerId } = usePlayer();
@@ -30,7 +30,7 @@ const Chat = () => {
   // FETCH PLAYERS
   const fetchPlayers = async () => {
     try {
-      const res = await fetch(`${BASE_URL}/api/players/${playerId}/chat`);
+      const res = await fetch(`/api/players/${playerId}/chat`);
       if (!res.ok) throw new Error(res.statusText);
       const response=await res.json()
       setPlayers(response);
@@ -43,7 +43,7 @@ const Chat = () => {
   // FETCH REQUESTS
   const fetchRequests = async () => {
     try {
-      const res = await fetch(`${BASE_URL}/api/players/${playerId}/chat-requests`);
+      const res = await fetch(`/api/players/${playerId}/chat-requests`);
       if (!res.ok) throw new Error(res.statusText);
       const data = await res.json();
       setChatRequests(data.incoming || []);
@@ -56,7 +56,7 @@ const Chat = () => {
   // FETCH ACCEPTED CONVERSATIONS
   const fetchAccepted = async () => {
     try {
-      const res = await fetch(`${BASE_URL}/api/players/${playerId}/conversations`);
+      const res = await fetch(`/api/players/${playerId}/conversations`);
       if (!res.ok) throw new Error(res.statusText);
       setAcceptedConversations(await res.json());
     } catch (err) {
@@ -67,7 +67,7 @@ const Chat = () => {
   // FETCH GROUPS
   const fetchGroups = async () => {
     try {
-      const res = await fetch(`${BASE_URL}/api/players/${playerId}/groups`);
+      const res = await fetch(`/api/players/${playerId}/groups`);
       if (!res.ok) throw new Error(res.statusText);
       setGroups(await res.json());
     } catch (err) {
@@ -144,7 +144,7 @@ const Chat = () => {
   const fetchUserMessages = async (receiverId) => {
     try {
       const res = await fetch(
-        `${BASE_URL}/api/players/${playerId}/messages/${receiverId}`
+        `/api/players/${playerId}/messages/${receiverId}`
       );
       if (!res.ok) throw new Error(res.statusText);
       setMessages(await res.json());
@@ -155,7 +155,7 @@ const Chat = () => {
   const fetchGroupMessages = async (groupId) => {
     try {
       const res = await fetch(
-        `${BASE_URL}/api/players/${playerId}/groups/${groupId}/messages`
+        `/api/players/${playerId}/groups/${groupId}/messages`
       );
       if (!res.ok) throw new Error(res.statusText);
       setMessages(await res.json());
@@ -188,7 +188,7 @@ const Chat = () => {
     e.stopPropagation();
     try {
       const res = await fetch(
-        `${BASE_URL}/api/players/${playerId}/chat-requests`,
+        `/api/players/${playerId}/chat-requests`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -205,7 +205,7 @@ const Chat = () => {
   const acceptRequest = async (requestId) => {
     try {
       const res = await fetch(
-        `${BASE_URL}/api/players/${playerId}/chat-requests/${requestId}/accept`,
+        `/api/players/${playerId}/chat-requests/${requestId}/accept`,
         { method: "POST" }
       );
       if (!res.ok) throw new Error(res.statusText);
@@ -221,7 +221,7 @@ const Chat = () => {
   const handleGroupSubmit = async () => {
     if (!groupName.trim() || !selectedMembers.length) return;
     try {
-      const res = await fetch(`${BASE_URL}/api/players/${playerId}/groups`, {
+      const res = await fetch(`/api/players/${playerId}/groups`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -243,7 +243,7 @@ const Chat = () => {
   const handleDeleteGroup = async (groupId) => {
     try {
       const res = await fetch(
-        `${BASE_URL}/api/players/${playerId}/groups/${groupId}`,
+        `/api/players/${playerId}/groups/${groupId}`,
         { method: "DELETE" }
       );
       if (!res.ok) throw new Error(res.statusText);

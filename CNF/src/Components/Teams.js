@@ -15,9 +15,9 @@ const Teams = () => {
 
     // Determine the API endpoint based on the route
     if (location.pathname === '/teams') {
-      endpoint = 'http://localhost:5000/api/teams';
+      endpoint = '/api/teams';
     } else if (location.pathname.startsWith('/players/')) {
-      endpoint = `http://localhost:5000/api/players/${playerId}/teams`;
+      endpoint = `/api/players/${playerId}/teams`;
     }
 
     const fetchTeams = async () => {
@@ -65,7 +65,7 @@ const Teams = () => {
             onClick={() => handleTeamClick(team.teamId)}
           >
             
-            <img src="/Images/Colorful Abstract Illustrative Cricket Club Sports Logo.png" alt="Team Logo" className="Teams-team-logo"/>
+            <img src="/Images/teamLogo.png" alt="Team Logo" className="Teams-team-logo"/>
             <div className="team-details">
               <h3>{team.name}</h3>
               <p>Since {team.createdAt

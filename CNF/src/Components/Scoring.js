@@ -412,7 +412,7 @@ const Scoring = () => {
   useEffect(() => {
     const fetchPlayingSquad = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/matches/${matchId}/playingSquad`);
+        const res = await fetch(`/api/matches/${matchId}/playingSquad`);
         const data = await res.json();
         console.log("Fetched data:", data);
 

@@ -28,7 +28,7 @@ const PlayerProfile = () => {
   useEffect(() => {
     const fetchPlayerData = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/players/id/${playerId}`);
+        const response = await fetch(`/api/players/id/${playerId}`);
         if (!response.ok) {
           throw new Error("Failed to fetch player data");
         }

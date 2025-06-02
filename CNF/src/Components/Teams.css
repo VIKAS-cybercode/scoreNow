@@ -125,7 +125,7 @@
   justify-content: center;
   cursor: pointer;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
+  z-index: 1001;
   transition: background-color 0.3s;
 }
 

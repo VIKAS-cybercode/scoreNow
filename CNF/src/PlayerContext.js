@@ -14,7 +14,7 @@ export const PlayerProvider = ({ children }) => {
   useEffect(() => {
     if (authLoading) return; // Don't overwrite too early
     if (isAuthenticated && user) {
-      fetch(`http://localhost:5000/api/players/${user.sub}`)
+      fetch(`api/players/${user.sub}`)
         .then((res) => res.json())
         .then((data) => {
           if (data.playerId) {
