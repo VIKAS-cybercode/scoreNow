@@ -8,34 +8,50 @@ export const usePlayer = () => useContext(PlayerContext);
 
 export const PlayerProvider = ({ children }) => {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth0();
-  const [playerId, setPlayerId] = useState("0");
+
+  const [playerId, setPlayerId] = useState(null); // Start as null
   const [loadingPlayer, setLoadingPlayer] = useState(true);
 
   useEffect(() => {
-    if (authLoading) return; // Don't overwrite too early
-    if (isAuthenticated && user) {
-      fetch(`api/players/${user.sub}`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.playerId) {
-            console.log(data.playerId);
-            setPlayerId(data.playerId);
-          } else {
-            setPlayerId(0); // Player not found, show form
-            console.log(playerId);
-          }
+    // Don't fetch if auth is still loading
+    if (authLoading) return;
+
+    // Reset before fetch
+    setLoadingPlayer(true);
+
+    if (isAuthenticated && user?.sub) {
+      fetch(`/api/players/${user.sub}`)
+        .then((res) => {
+          if (!res.ok) throw new Error("Failed to fetch");
+          return res.json();
         })
-        .catch(() => setPlayerId(0))
-        .finally(() => setLoadingPlayer(false));
+        .then((data) => {
+          console.log("Fetched playerId:", data.playerId);
+          setPlayerId(data.playerId ?? 0); // 0 means show PlayerForm
+        })
+        .catch((err) => {
+          console.error("Error fetching player:", err);
+          setPlayerId(0);
+        })
+        .finally(() => {
+          setLoadingPlayer(false);
+        });
     } else {
+      // Not authenticated
       setPlayerId(0);
       setLoadingPlayer(false);
     }
-    console.log(playerId);
-  }, [isAuthenticated, user,authLoading,playerId]);
-
+  }, [isAuthenticated, authLoading, user?.sub]);
   return (
-    <PlayerContext.Provider value={{ playerId, setPlayerId, loadingPlayer, authLoading, userSub:user?.sub || null }}>
+    <PlayerContext.Provider
+      value={{
+        playerId,
+        setPlayerId,
+        loadingPlayer,
+        authLoading,
+        userSub: user?.sub ?? null,
+      }}
+    >
       {children}
     </PlayerContext.Provider>
   );

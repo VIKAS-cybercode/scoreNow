@@ -74,7 +74,7 @@ const PlayerProfile = () => {
 
     fetchPlayerData();
   }, [playerId]);
-  if (playerId==="0") {
+  if (Number(playerId) === 0) {
     return <PlayerForm />;
   }
   if (loading) return <p>Loading player data...</p>;
