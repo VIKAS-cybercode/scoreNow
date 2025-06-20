@@ -1,15 +1,15 @@
 {
   "files": {
     "main.css": "/static/css/main.98fb0afb.css",
-    "main.js": "/static/js/main.fffb5a7b.js",
+    "main.js": "/static/js/main.460422f0.js",
     "static/media/bat-icon.png": "/static/media/bat-icon.e37b9831df1b5f6db67c.png",
     "static/media/leather-ball.png": "/static/media/leather-ball.99a9cf9a05e1627fe192.png",
     "index.html": "/index.html",
     "main.98fb0afb.css.map": "/static/css/main.98fb0afb.css.map",
-    "main.fffb5a7b.js.map": "/static/js/main.fffb5a7b.js.map"
+    "main.460422f0.js.map": "/static/js/main.460422f0.js.map"
   },
   "entrypoints": [
     "static/css/main.98fb0afb.css",
-    "static/js/main.fffb5a7b.js"
+    "static/js/main.460422f0.js"
   ]
 }
